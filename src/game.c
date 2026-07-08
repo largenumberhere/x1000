@@ -1,4 +1,5 @@
 #include "../include/game.h"
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,15 +16,98 @@ int debug_box_x = 0;
 
 
 typedef enum clickableKind_t {
-	ClickableKindUp =		1,
-	ClickableKindDown =		2,
-	ClickableKindLeft =		3,
-	ClickableKindRight =	4,
-} GameClickableKind;
+	GameDirectionUp =		1,
+	GameDirectionDown =		2,
+	GameDirectionLeft =		3,
+	GameDirectionRight =	4,
+} GameDirection;
+
+typedef struct {
+	int tileValue[6][6];
+} TileValues;
+
+static TileValues tile_values = {0};
+int getTileValue(int x, int y) {
+	return tile_values.tileValue[y][x];
+}
+
+int* getTileValuePtr(int x, int y) {
+	return (tile_values.tileValue[y]) + x;
+}
+
+void setTileValue(int x, int y, int value) {
+	tile_values.tileValue[y][x] = value;
+}
+
+void initTiles() {
+	setTileValue(1, 3, 0x1);
+	setTileValue(1,4, 0x1);
+
+}
+
+void tickTiles() {
+
+}
+
+void moveTilesUp() {}
+
+void mergeTilesDown() {
+
+}
+
+void moveTilesDown() {
+	for (int x = 0; x < 6; x++) {
+		int top = 0;
+		int btm = 6-1;
+		while (top < 6) {
+			int topVal = getTileValue(x, top);
+			int btmVal =getTileValue(x, btm);
+			if (btmVal == 0 && topVal != 0) {
+				int btmCopy = btmVal;
+				btmVal = topVal;
+				topVal = btmCopy;
+
+				setTileValue(x, top, topVal);
+				setTileValue(x, btm, btmVal);
+
+				btm --;
+			}
+
+
+			top ++;
+		}
+
+
+	}
+}
+void moveTilesLeft() {
+
+}
+void moveTilesRight() {}
+
+void shiftTiles(GameDirection direction) {
+	switch (direction) {
+		case GameDirectionUp:
+			moveTilesUp();
+			break;
+		case GameDirectionDown:
+			moveTilesDown();
+			mergeTilesDown();
+			break;
+		case GameDirectionLeft:
+			moveTilesLeft();
+			break;
+		case GameDirectionRight:
+			moveTilesRight();
+			break;
+		default: GAME_ASSERT(false);
+	}
+}
+
 
 typedef struct {
 	Rectangle position;
-	GameClickableKind kind;
+	GameDirection direction;
 	float tickCooldownCurrent;
 	float tickCooldownMax;
 } GameClickable;
@@ -35,10 +119,10 @@ static int64_t clickableCount = 0;
 
 
 void initClickables() {
-	GameClickable upArrow = {.kind = ClickableKindUp, .position = {0, 0, 20, 20}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
-	GameClickable downArrow = {.kind = ClickableKindDown, .position = {0, 30, 20, 20}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
-	GameClickable leftArrow = {.kind = ClickableKindLeft, .position = {0, 60, 20, 20}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
-	GameClickable rightArrow = {.kind = ClickableKindRight, .position = {0, 90, 20, 20}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
+	GameClickable upArrow = {.direction = GameDirectionUp, .position = {0, 0, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
+	GameClickable downArrow = {.direction = GameDirectionDown, .position = {0, 100, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
+	GameClickable leftArrow = {.direction = GameDirectionLeft, .position = {0, 200, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
+	GameClickable rightArrow = {.direction = GameDirectionRight, .position = {0, 300, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
 
 	clickables[clickableCount++] = upArrow;
 	clickables[clickableCount++] = downArrow;
@@ -53,12 +137,36 @@ void drawClickables() {
 		} else {
 			DrawRectangleRec(clickables[i].position, BROWN);
 		}
+
+		int size = 80;
+		Vector2 pos = { clickables[i].position.x, clickables[i].position.y};
+		switch (clickables[i].direction) {
+			case GameDirectionUp:
+				DrawText("^", pos.x, pos.y, size, WHITE);
+
+				break;
+			case GameDirectionDown:
+				DrawText("v", pos.x, pos.y, size, WHITE);
+
+				break;
+			case GameDirectionLeft:
+				DrawText("<", pos.x, pos.y, size, WHITE);
+
+				break;
+			case GameDirectionRight:
+				DrawText(">", pos.x, pos.y, size, WHITE);
+
+				break;
+			default: GAME_ASSERT(false);
+		}
 	}
 
 }
 
-void drawRenderTexture() {
+void drawGameRenderTexture() {
 	Rectangle flippedSource = gameRenderTextureSize;
+
+	// rendering seems to start from bottom instead of top, flipping is needed
 	flippedSource.height = -flippedSource.height;
 	DrawTexturePro(gameRenderTexture.texture, flippedSource, gameDestinationScreenSize, Vector2Zero(), 0, WHITE);
 }
@@ -77,11 +185,29 @@ void gamePreInit2() {
 }
 
 void gamePreInit3() {
-	// load any resources the depend on raylib
+	// load any resources that depend on raylib
 	loadGameRenderTexture();
 	initClickables();
+	initTiles();
 }
 
+
+void drawTiles() {
+	float offX = 100;
+	float offY = 100;
+	float width = 120;
+	float height = 120;
+	float padx = 15;
+	float pady = 15;
+	for (int y = 0; y < 6; y++) {
+		for (int x = 0; x < 6; x++) {
+			if (getTileValue(x, y) > 0) {
+				Rectangle rec = {.x = (float)x * width + offX + (float)x * padx, .y = (float)y * height + offY + (float)y * pady, width, height};
+				DrawRectangleRec(rec, BLUE);
+			}
+		}
+	}
+}
 void drawGrid() {
 	float offX = 100;
 	float offY = 100;
@@ -98,10 +224,13 @@ void drawGrid() {
 }
 
 
+
+
 void gameDraw() {
 	BeginTextureMode(gameRenderTexture);
 	{
 		drawGrid();
+		drawTiles();
 		drawClickables();
 		DrawText("Title", 450, 25, 55, RED);
 
@@ -114,7 +243,7 @@ void gameDraw() {
 
 	BeginDrawing();
 	{
-		drawRenderTexture();
+		drawGameRenderTexture();
 	}
 	EndDrawing();
 }
@@ -133,6 +262,7 @@ void tickClickables () {
 		if (wasLeftclickPressed) {
 			if (isButtonHovered) {
 				clickables[i].tickCooldownCurrent = 0;
+				shiftTiles(clickables[i].direction);
 			}
 		}
 	}
