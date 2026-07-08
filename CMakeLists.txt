@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
-project(my_game C CXX)
+#project(my_game C CXX)
 
 set(CMAKE_C_STANDARD 99)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+#set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(BUILD_FOR_WEB "Build for the web with Emscripten" ON)
 
