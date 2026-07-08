@@ -1,0 +1,10 @@
+# raylib's crap
+/_deps
+
+# burn in hell cmake
+/build
+/CMakeFiles
+
+# some cheeky IDE configs
+/.idea
+
