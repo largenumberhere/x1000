@@ -8,3 +8,7 @@
 # some cheeky IDE configs
 /.idea
 
+# Dependencies that I probably can't redistribute as source code
+/emsdk
+/raylib
+
