@@ -1,4 +1,3 @@
-#include "../include/game_render_texture.h"
 #include "../include/game.h"
 #include "../include/get_mouse_pos_rel.h"
 #include <stdio.h>

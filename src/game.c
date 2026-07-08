@@ -8,11 +8,9 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "../include/game_error.h"
-#include "../include/game_render_texture.h"
 #include "../include/get_mouse_pos_rel.h"
 
 int debug_box_x = 0;
-
 
 
 
@@ -59,6 +57,16 @@ void drawClickables() {
 
 }
 
+void drawRenderTexture() {
+	Rectangle flippedSource = gameRenderTextureSize;
+	flippedSource.height = -flippedSource.height;
+	DrawTexturePro(gameRenderTexture.texture, flippedSource, gameDestinationScreenSize, Vector2Zero(), 0, WHITE);
+}
+
+void loadGameRenderTexture() {
+	gameRenderTexture = LoadRenderTexture(gameRenderTextureSize.width, gameRenderTextureSize.height);
+}
+
 void gamePreInit1() {
 	// anything needed before raylib starts
 }
@@ -69,8 +77,7 @@ void gamePreInit2() {
 }
 
 void gamePreInit3() {
-	// load any resources
-
+	// load any resources the depend on raylib
 	loadGameRenderTexture();
 	initClickables();
 }
@@ -107,9 +114,7 @@ void gameDraw() {
 
 	BeginDrawing();
 	{
-		Rectangle flippedSource = gameRenderTextureSize;
-		flippedSource.height = -flippedSource.height;
-		DrawTexturePro(gameRenderTexture.texture, flippedSource, gameDestinationScreenSize, Vector2Zero(), 0, WHITE);
+		drawRenderTexture();
 	}
 	EndDrawing();
 }

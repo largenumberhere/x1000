@@ -35,7 +35,6 @@ add_executable(${PROJECT_NAME}
         src/game.c
         include/game_error.h
         src/game_error.c
-        src/game_render_texture.c
         include/get_mouse_pos_rel.h
         src/get_mouse_pos_rel.c
 )
