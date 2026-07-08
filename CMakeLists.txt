@@ -29,7 +29,15 @@ configure_file(
 )
 
 add_executable(${PROJECT_NAME}
-    src/main.c
+
+        src/main.c
+        include/game.h
+        src/game.c
+        include/game_error.h
+        src/game_error.c
+        src/game_render_texture.c
+        include/get_mouse_pos_rel.h
+        src/get_mouse_pos_rel.c
 )
 
 target_link_libraries(${PROJECT_NAME} raylib)
