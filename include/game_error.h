@@ -3,7 +3,7 @@
 
 #define GAME_ASSERT(condition) \
     do {	\
-        if (!condition) {	\
+        if (!(condition)) {	\
             assertFail(__FILE__, __LINE__);\
         };	\
     } while (0);

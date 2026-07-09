@@ -10,9 +10,13 @@
 #include "raymath.h"
 #include "../include/game_error.h"
 #include "../include/get_mouse_pos_rel.h"
+#ifndef PLATFORM_DESKTOP
+	#include "emscripten/emscripten.h"
+#endif
+
 
 int debug_box_x = 0;
-
+bool gameTerminateWindowImmediately = false;
 
 
 typedef enum clickableKind_t {
@@ -222,6 +226,98 @@ void drawGrid() {
 		}
 	}
 }
+/* For flat hexagons. Computes the outer edge coordinate from the inner edge and a count of degrees.
+ * Adapted from https://www.redblobgames.com/grids/hexagons/
+ * Supports over 360 degrees somehow
+ *
+ *	  *****
+ *	*      *
+ * *		*
+ *	*	   *
+ *	  *****
+ *	( ^ a flat-top hexagon  )
+ */
+Vector2 hexagonCorner(Vector2 centerPos, float size, float sideNumber) {
+	float degrees = 60 * sideNumber - 30;
+	float radians = PI / 180 * degrees;
+
+	Vector2 point = {centerPos.x + size * cos(radians),
+		centerPos.y + size * sin(radians)
+	};
+	return point;
+}
+
+// draws a hexagon by triangles and points
+void drawHexagon(Vector2 centrePoint, float size) {
+	// Draw 6 triangles to compose the shape, starting from the centre point.
+	// Wraps around for the first one to always have 3 valid points for every single valid triangle
+	for (int i = 1; i < 6 + 1; i++) {
+		Vector2 leftPoint = hexagonCorner(centrePoint, size, i -1);
+		Vector2 rightPoint = hexagonCorner(centrePoint, size, i);
+
+		DrawTriangle(centrePoint, rightPoint, leftPoint, BROWN);
+	}
+
+	// Draw outline
+	// (A big choppy on corners, but shhh it's fine with small line tickness.)
+	for (int i = 1; i < 6 + 1; i++) {
+		Vector2 leftPoint = hexagonCorner(centrePoint, size, i - 1);
+		Vector2 rightPoint = hexagonCorner(centrePoint, size, i);
+		DrawLineEx(leftPoint, rightPoint, 3, DARKGRAY);
+	}
+
+}
+
+/*
+*  Next we want to put several hexagons together.
+*  The spacing will depend on both the outer circle's radius (size) and the inner circle's radius (inradius).
+
+In the pointy orientation, the horizontal distance between adjacent hexagon centers is horiz = width == sqrt(3) * size == 2 * inradius.
+The vertical distance is vert = 3/4 * height == 3/2 * size.
+ *
+ *
+ */
+
+// // arbitrary number root of a number
+// float froot(float value, float root_number) {
+// 	return powf(value, 1 / root_number);
+// }
+//
+// float root3(float value) {
+// 	return froot(value, 3);
+// }
+
+void tileHexagonHorizEvenRow(int count, Vector2 centrePoint, float size) {
+	float horiz = sqrtf(3) * size;
+	float vert = ((float)3/(float)2) * size;
+	for (int i = 0; i < count; i++) {
+		Vector2 point = centrePoint;
+		point.x += (i * horiz);
+		drawHexagon(point, size);
+	}
+
+	// for horizontal tesselation purposes, the width of a hexagon can be considered root3 of its radius
+
+}
+
+float hexVerticalDiff(float size) {
+	return (float)3/(float)2 * size;
+}
+
+float hexHorizDiff(float size) {
+	return sqrtf(3) * size;
+}
+
+void tileHexagonVertOddRow(int count, Vector2 centrePoint, float size) {
+	float horiz = sqrtf(3) * size;
+	for (int i = 0; i < count; i++) {
+		Vector2 point = centrePoint;
+		point.x += (i * horiz);
+		drawHexagon(point, size);
+	}
+
+}
+
 
 
 
@@ -229,14 +325,21 @@ void drawGrid() {
 void gameDraw() {
 	BeginTextureMode(gameRenderTexture);
 	{
-		drawGrid();
-		drawTiles();
-		drawClickables();
-		DrawText("Title", 450, 25, 55, RED);
+		// drawGrid();
+		// drawTiles();
+		// drawClickables();
+		// DrawText("Title", 450, 25, 55, RED);
+		//
+		//
+		ClearBackground(RAYWHITE);
+		// DrawRectangle(debug_box_x, 10, 30, 30, ORANGE);
+		Vector2 point = {500, 500};
+		// drawHexagon(point, 100);
+		tileHexagonHorizEvenRow(4, point, 50);
 
+		Vector2 point2 = {500 + hexHorizDiff(50)/2 , 500+ hexVerticalDiff(50)};
+		tileHexagonVertOddRow(4, point2, 50);
 
-		ClearBackground(GREEN);
-		DrawRectangle(debug_box_x, 10, 30, 30, ORANGE);
 	}
 	EndTextureMode();
 
@@ -280,12 +383,32 @@ void tickClickables () {
 void gameTick() {
 	debug_box_x += 10;
 	tickClickables();
+
+	// debugging utility on desktop
+	#ifndef PLATFORM_WEB
+	if (IsKeyDown(KEY_ESCAPE)) {
+		gameTerminateWindowImmediately = true;
+	}
+	#endif
+
 }
 
 
 
 
 void gameUpdate() {
+#ifndef PLATFORM_DESKTOP
+	if (gameTerminateWindowImmediately) {
+		emscripten_cancel_main_loop();
+		BeginDrawing();
+		ClearBackground(WHITE);
+		DrawText("Game terminated. Please refresh window", 0, 0, 30, BLACK);
+		EndDrawing();
+		return;
+	}
+#endif
+
+
 	if (gameErrored) {
 		drawError();
 		return;
