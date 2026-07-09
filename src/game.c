@@ -14,6 +14,7 @@
 	#include "emscripten/emscripten.h"
 #endif
 #include "../include/game.h"
+#include "../include/hexagons.h"
 
 RenderTexture2D gameRenderTexture = {0};
 Rectangle gameRenderTextureSize = {.x=0, .y=0,.width= 1000, .height=1000};
@@ -325,10 +326,41 @@ void tileHexagonVertOddRow(int count, Vector2 centrePoint, float size) {
 
 
 
+typedef struct {
+	float hex[20 /*q*/][20 /*r*/];
+} HexTilesQr;
+
+static HexTilesQr hexTiles = {0};
 
 void gameDraw() {
+
 	BeginTextureMode(gameRenderTexture);
 	{
+		char buff[1024] = {0};
+		for (int r = 0; r < 5; r++) {
+			for (int q = 0; q < 5; q++) {
+				AxialHex hex = {q, r};
+				if (hexTiles.hex[q][r] == 0) {
+					continue;
+				}
+
+				Vector2 pos = hexToVec2(hex, 50);
+				pos.x += 50;
+				pos.y += 50;
+				drawHexagon(pos, 50);
+				buff[0] = '\0';
+				// sprintf(buff, "%02f.0", hexTiles.hex[q][r]);
+				// DrawText(buff, pos.x, pos.y, 40, ORANGE);
+			}
+		}
+
+		for (int y = 0; y < 6; y++) {
+			for (int x = 0; x < 6; x++) {
+				Vector2 pos = {x * 50, y * 50};
+				hexTiles.hex[y][x] = (float)1;
+			}
+		}
+
 		// drawGrid();
 		// drawTiles();
 		// drawClickables();
@@ -354,6 +386,7 @@ void gameDraw() {
 	}
 	EndDrawing();
 }
+
 
 
 
