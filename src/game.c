@@ -14,6 +14,9 @@
 	#include "emscripten/emscripten.h"
 #endif
 
+RenderTexture2D gameRenderTexture = {0};
+Rectangle gameRenderTextureSize = {.x=0, .y=0,.width= 1000, .height=1000};
+Rectangle gameDestinationScreenSize = {0, 0, 720, 720};
 
 int debug_box_x = 0;
 bool gameTerminateWindowImmediately = false;

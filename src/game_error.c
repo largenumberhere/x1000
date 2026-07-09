@@ -15,6 +15,8 @@ void assertFail(const char* file, int line) {
 #endif
 }
 
+char gameErrorBuff[512] = {0};
+bool gameErrored = false;
 
 void drawError() {
     BeginDrawing();

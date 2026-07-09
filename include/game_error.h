@@ -12,7 +12,7 @@
 void assertFail(const char* file, int line);
 void drawError();
 
-static bool gameErrored = false;
-static char gameErrorBuff[512] = {0};
+extern bool gameErrored;
+extern char gameErrorBuff[512];
 
 

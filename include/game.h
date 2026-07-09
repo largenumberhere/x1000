@@ -1,10 +1,10 @@
 #pragma once
 #include "raylib.h"
 
-static Rectangle gameDestinationScreenSize = {0, 0, 720, 720};
-static Rectangle gameRenderTextureSize = {.x=0, .y=0,.width= 1000, .height=1000};
+extern Rectangle gameDestinationScreenSize;
+extern Rectangle gameRenderTextureSize;
 
-static RenderTexture2D gameRenderTexture = {0};
+extern RenderTexture2D gameRenderTexture;
 extern bool gameTerminateWindowImmediately;
 
 void gamePreInit1();
