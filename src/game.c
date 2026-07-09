@@ -270,8 +270,28 @@ void drawHexagon(Vector2 centrePoint, float size) {
 		Vector2 rightPoint = hexagonCorner(centrePoint, size, i);
 		DrawLineEx(leftPoint, rightPoint, 3, DARKGRAY);
 	}
-
 }
+
+void drawHexagon2(Vector2 centrePoint, float size) {
+	// Draw 6 triangles to compose the shape, starting from the centre point.
+	// Wraps around for the first one to always have 3 valid points for every single valid triangle
+	for (int i = 1; i < 6 + 1; i++) {
+		Vector2 leftPoint = hexagonCorner(centrePoint, size, i -1);
+		Vector2 rightPoint = hexagonCorner(centrePoint, size, i);
+
+		DrawTriangle(centrePoint, rightPoint, leftPoint, MAROON);
+	}
+
+	// Draw outline
+	// (A big choppy on corners, but shhh it's fine with small line tickness.)
+	for (int i = 1; i < 6 + 1; i++) {
+		Vector2 leftPoint = hexagonCorner(centrePoint, size, i - 1);
+		Vector2 rightPoint = hexagonCorner(centrePoint, size, i);
+		DrawLineEx(leftPoint, rightPoint, 3, BLACK);
+	}
+}
+
+
 
 /*
 *  Next we want to put several hexagons together.
@@ -330,35 +350,54 @@ typedef struct {
 	float hex[20 /*q*/][20 /*r*/];
 } HexTilesQr;
 
+const float TILE_UNUSED = -1;
+
 static HexTilesQr hexTiles = {0};
 
-void gameDraw() {
 
+
+void gameDraw() {
 	BeginTextureMode(gameRenderTexture);
 	{
 		char buff[1024] = {0};
-		for (int r = 0; r < 5; r++) {
-			for (int q = 0; q < 5; q++) {
-				AxialHex hex = {q, r};
-				if (hexTiles.hex[q][r] == 0) {
+		for (int r = 0; r < 6; r++) {
+			for (int q = 0; q < 6; q++) {
+				AxialHex hexUnit = {q, r};
+				if (hexTiles.hex[q][r] == -1) {
 					continue;
 				}
 
-				Vector2 pos = hexToVec2(hex, 50);
-				pos.x += 50;
-				pos.y += 50;
-				drawHexagon(pos, 50);
+				Vector2 px = hexToVec2(hexUnit, 50);
+				px.x += 50; // offset from the top left
+				px.y += 50;
+
+				drawHexagon(px, 50);
 				buff[0] = '\0';
-				// sprintf(buff, "%02f.0", hexTiles.hex[q][r]);
-				// DrawText(buff, pos.x, pos.y, 40, ORANGE);
 			}
 		}
 
-		for (int y = 0; y < 6; y++) {
-			for (int x = 0; x < 6; x++) {
-				Vector2 pos = {x * 50, y * 50};
-				hexTiles.hex[y][x] = (float)1;
+
+		for (int q = 0; q < 6; q++) {
+			for (int r = 0; r < 6; r++) {
+				hexTiles.hex[q][r] = (float)1;
+				AxialHex hex = {q, r};
+				AxialHex centre = {2, 2};
+				float distance = axialManhattanDistance(centre, hex);
+				if (distance > 2) {
+					hexTiles.hex[q][r] = TILE_UNUSED;
+				}
 			}
+		}
+
+		AxialHex centre = {2, 2};
+		for (int i = 0; i < 6; i++) {
+			AxialHex axial = axialDirectNeighbour(centre, i);
+
+			Vector2 px = hexToVec2(axial, 50);
+			px.x += 50; // offset from the top left
+			px.y += 50;
+
+			drawHexagon2(px, 50);
 		}
 
 		// drawGrid();
@@ -369,12 +408,12 @@ void gameDraw() {
 		//
 		ClearBackground(RAYWHITE);
 		// DrawRectangle(debug_box_x, 10, 30, 30, ORANGE);
-		Vector2 point = {500, 500};
-		// drawHexagon(point, 100);
-		tileHexagonHorizEvenRow(4, point, 50);
-
-		Vector2 point2 = {500 + hexHorizDiff(50)/2 , 500+ hexVerticalDiff(50)};
-		tileHexagonVertOddRow(4, point2, 50);
+		// Vector2 point = {500, 500};
+		// // drawHexagon(point, 100);
+		// tileHexagonHorizEvenRow(4, point, 50);
+		//
+		// Vector2 point2 = {500 + hexHorizDiff(50)/2 , 500+ hexVerticalDiff(50)};
+		// tileHexagonVertOddRow(4, point2, 50);
 
 	}
 	EndTextureMode();

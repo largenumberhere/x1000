@@ -1,6 +1,8 @@
 #pragma once
 #include "../emsdk/upstream/emscripten/cache/sysroot/include/math.h"
 
+// https://www.redblobgames.com/grids/hexagons/
+
 // Axial hexagon coordinates
 typedef struct {
     float q;
@@ -66,7 +68,7 @@ AxialHex vec2ToHex(Vector2 vec, float size) {
     float x = vec.x / size;
     float y = vec.y / size;
 
-    float q = (sqrt(3)/(float)3 * x - (float)1/(float)3 * y);
+    float q = (sqrtf(3.0f)/(float)3 * x - (float)1/(float)3 * y);
     float r = ((float)2/(float)3 * y);
 
     AxialHex coords = {q, r};
@@ -76,5 +78,65 @@ AxialHex vec2ToHex(Vector2 vec, float size) {
 
     coords = cubeToAxial(cubeCoords);
     return coords;
+}
+
+
+float axialManhattanDistance(AxialHex axial1, AxialHex axial2) {
+    CubeHex a = axialToCube(axial1);
+    CubeHex b = axialToCube(axial2);
+
+    CubeHex diff = {a.q - b.q, a.r - b.r, a.s - b.s};
+    float distance = (fabsf(diff.q) + fabsf(diff.r) + fabsf(diff.s)) / 2;
+    return distance;
+}
+
+
+AxialHex axialDirectionVectors[] = {
+    {+1, 0},
+    {+1, -1},
+    {0, -1},
+    {-1, 0},
+    {-1, +1},
+    {0, +1},
+};
+
+
+
+CubeHex cubeHexDirectionalVectors[] = {
+    {2.0f, -1.0f, -1.0f},
+    {+1, -2, +1},
+    {-1, -1, +2},
+    {-2, +1, +1},
+    {-1, +2, -1},
+    {+1, +1, -2}
+};
+
+typedef enum {
+    HEXN_NE =   0,
+    HEXN_N =    1,
+    HEXN_NW =   2,
+    HEXN_SW =   3,
+    HEXN_S =    4,
+    HEXN_SE =   5,
+}  HexDirection;
+
+
+AxialHex axialDiagonalNeighbour(AxialHex axial, HexDirection direction) {
+    GAME_ASSERT(direction < 6);
+    AxialHex vector = cubeToAxial(cubeHexDirectionalVectors[direction]);
+    axial.r += vector.r;
+    axial.q += vector.q;
+
+    return axial;
+}
+
+
+AxialHex axialDirectNeighbour(AxialHex axial, HexDirection direction) {
+    GAME_ASSERT(direction < 6);
+    AxialHex vector = axialDirectionVectors[direction];
+    axial.r += vector.r;
+    axial.q += vector.q;
+
+    return axial;
 }
 
