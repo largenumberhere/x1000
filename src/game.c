@@ -13,6 +13,7 @@
 #ifndef PLATFORM_DESKTOP
 	#include "emscripten/emscripten.h"
 #endif
+#include "../include/game.h"
 
 RenderTexture2D gameRenderTexture = {0};
 Rectangle gameRenderTextureSize = {.x=0, .y=0,.width= 1000, .height=1000};
@@ -20,7 +21,7 @@ Rectangle gameDestinationScreenSize = {0, 0, 720, 720};
 
 int debug_box_x = 0;
 bool gameTerminateWindowImmediately = false;
-
+const char* gameVersion = "0.1";
 
 typedef enum clickableKind_t {
 	GameDirectionUp =		1,
@@ -386,38 +387,17 @@ void tickClickables () {
 void gameTick() {
 	debug_box_x += 10;
 	tickClickables();
-
-	// debugging utility on desktop
-	#ifndef PLATFORM_WEB
-	if (IsKeyDown(KEY_ESCAPE)) {
-		gameTerminateWindowImmediately = true;
-	}
-	#endif
-
 }
 
 
 
-
 void gameUpdate() {
-#ifndef PLATFORM_DESKTOP
-	if (gameTerminateWindowImmediately) {
-		emscripten_cancel_main_loop();
-		BeginDrawing();
-		ClearBackground(WHITE);
-		DrawText("Game terminated. Please refresh window", 0, 0, 30, BLACK);
-		EndDrawing();
-		return;
-	}
-#endif
-
-
+	PollInputEvents();	// apparently handles some wasm stuff too
 	if (gameErrored) {
 		drawError();
 		return;
 	}
 
 	gameDraw();
-	PollInputEvents();
 	gameTick();
 }

@@ -1,6 +1,8 @@
 #pragma once
 #include "raylib.h"
 
+extern const char* gameVersion;
+
 extern Rectangle gameDestinationScreenSize;
 extern Rectangle gameRenderTextureSize;
 

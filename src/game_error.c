@@ -2,17 +2,14 @@
 #include <stdbool.h>
 #include <raylib.h>
 #include <stdio.h>
+#include "../include/game.h"
 
 
 void assertFail(const char* file, int line) {
     gameErrored = true;
-    sprintf(gameErrorBuff, "Assertion failed at %s:%i\n", file, line);
+    sprintf(gameErrorBuff, "Assertion failed. Version '%s'. At %s:%i\n", gameVersion, file, line);
 
     TraceLog(LOG_ERROR, gameErrorBuff);
-#ifdef PLATFORM_WEB
-#else
-
-#endif
 }
 
 char gameErrorBuff[512] = {0};
