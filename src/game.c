@@ -20,107 +20,52 @@ RenderTexture2D gameRenderTexture = {0};
 Rectangle gameRenderTextureSize = {.x=0, .y=0,.width= 1000, .height=1000};
 Rectangle gameDestinationScreenSize = {0, 0, 720, 720};
 
-int debug_box_x = 0;
 bool gameTerminateWindowImmediately = false;
-const char* gameVersion = "0.1";
-
-typedef enum clickableKind_t {
-	GameDirectionUp =		1,
-	GameDirectionDown =		2,
-	GameDirectionLeft =		3,
-	GameDirectionRight =	4,
-} GameDirection;
-
-typedef struct {
-	int tileValue[6][6];
-} TileValues;
-
-static TileValues tile_values = {0};
-int getTileValue(int x, int y) {
-	return tile_values.tileValue[y][x];
-}
-
-int* getTileValuePtr(int x, int y) {
-	return (tile_values.tileValue[y]) + x;
-}
-
-void setTileValue(int x, int y, int value) {
-	tile_values.tileValue[y][x] = value;
-}
-
-void initTiles() {
-	setTileValue(1, 3, 0x1);
-	setTileValue(1,4, 0x1);
-
-}
-
-void tickTiles() {
-
-}
-
-void moveTilesUp() {}
-
-void mergeTilesDown() {
-
-}
-
-void moveTilesDown() {
-	for (int x = 0; x < 6; x++) {
-		int top = 0;
-		int btm = 6-1;
-		while (top < 6) {
-			int topVal = getTileValue(x, top);
-			int btmVal =getTileValue(x, btm);
-			if (btmVal == 0 && topVal != 0) {
-				int btmCopy = btmVal;
-				btmVal = topVal;
-				topVal = btmCopy;
-
-				setTileValue(x, top, topVal);
-				setTileValue(x, btm, btmVal);
-
-				btm --;
-			}
-
-
-			top ++;
-		}
-
-
-	}
-}
-void moveTilesLeft() {
-
-}
-void moveTilesRight() {}
-
-void shiftTiles(GameDirection direction) {
-	switch (direction) {
-		case GameDirectionUp:
-			moveTilesUp();
-			break;
-		case GameDirectionDown:
-			moveTilesDown();
-			mergeTilesDown();
-			break;
-		case GameDirectionLeft:
-			moveTilesLeft();
-			break;
-		case GameDirectionRight:
-			moveTilesRight();
-			break;
-		default: GAME_ASSERT(false);
-	}
-}
-
+const char* gameVersion = "0.2";
 
 typedef struct {
 	Rectangle position;
-	GameDirection direction;
+	HexDirection direction;
 	float tickCooldownCurrent;
 	float tickCooldownMax;
 } GameClickable;
 
+
+typedef struct {
+	bool tickSpawnRandomHexTile;
+
+} GameState;
+
+GameState gameState = {0};
+
+
+#define  MAX_Q 5
+#define  MAX_R 5
+typedef struct {
+	float hex[MAX_Q][MAX_R];
+} HexTilesQr;
+
+const float TILE_UNUSED = -1;	// hidden corner
+const float TILE_EMPTY = 0;
+const float TILE_MIN_POPULATED = 1;
+
+
+static HexTilesQr hexTiles = {0};
+void initHexTiles() {
+	for (int q = 0; q < MAX_Q; q++) {
+		for (int r = 0; r < MAX_R; r++) {
+			hexTiles.hex[q][r] = (float)1;
+			AxialHex hex = {q, r};
+			AxialHex centre = {2, 2};
+			float distance = axialManhattanDistance(centre, hex);
+			if (distance > 2) {
+				hexTiles.hex[q][r] = TILE_UNUSED;
+			} else {
+				hexTiles.hex[q][r] = 0;
+			}
+		}
+	}
+}
 
 #define MAX_CLICKABLE 64
 static GameClickable clickables[MAX_CLICKABLE];
@@ -128,15 +73,15 @@ static int64_t clickableCount = 0;
 
 
 void initClickables() {
-	GameClickable upArrow = {.direction = GameDirectionUp, .position = {0, 0, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
-	GameClickable downArrow = {.direction = GameDirectionDown, .position = {0, 100, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
-	GameClickable leftArrow = {.direction = GameDirectionLeft, .position = {0, 200, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
-	GameClickable rightArrow = {.direction = GameDirectionRight, .position = {0, 300, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
+	GameClickable upArrow = {.direction = HEXN_SE, .position = {0, 0, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
+	// GameClickable downArrow = {.direction = GameDirectionDown, .position = {0, 100, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
+	// GameClickable leftArrow = {.direction = GameDirectionLeft, .position = {0, 200, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
+	// GameClickable rightArrow = {.direction = GameDirectionRight, .position = {0, 300, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
 
 	clickables[clickableCount++] = upArrow;
-	clickables[clickableCount++] = downArrow;
-	clickables[clickableCount++] = leftArrow;
-	clickables[clickableCount++] = rightArrow;
+	// clickables[clickableCount++] = downArrow;
+	// clickables[clickableCount++] = leftArrow;
+	// clickables[clickableCount++] = rightArrow;
 }
 
 void drawClickables() {
@@ -150,26 +95,46 @@ void drawClickables() {
 		int size = 80;
 		Vector2 pos = { clickables[i].position.x, clickables[i].position.y};
 		switch (clickables[i].direction) {
-			case GameDirectionUp:
-				DrawText("^", pos.x, pos.y, size, WHITE);
-
+			case HEXN_SE:
+				DrawText("South East \\", pos.x, pos.y, size, WHITE);
 				break;
-			case GameDirectionDown:
-				DrawText("v", pos.x, pos.y, size, WHITE);
-
-				break;
-			case GameDirectionLeft:
-				DrawText("<", pos.x, pos.y, size, WHITE);
-
-				break;
-			case GameDirectionRight:
-				DrawText(">", pos.x, pos.y, size, WHITE);
-
-				break;
+			// case GameDirectionDown:
+			// 	DrawText("v", pos.x, pos.y, size, WHITE);
+			//
+			// 	break;
+			// case GameDirectionLeft:
+			// 	DrawText("<", pos.x, pos.y, size, WHITE);
+			//
+			// 	break;
+			// case GameDirectionRight:
+			// 	DrawText(">", pos.x, pos.y, size, WHITE);
+			//
+			// 	break;
 			default: GAME_ASSERT(false);
 		}
 	}
 
+}
+
+void spawnRandomHexTile() {
+	int q = 0;
+	int r = 0;
+	do {
+		int qr = GetRandomValue(0, MAX_Q * MAX_R -1);
+		q = qr % MAX_Q;
+		r = qr / MAX_R;
+
+		GAME_ASSERT(q < MAX_Q);
+		GAME_ASSERT(r < MAX_R);
+		GAME_ASSERT(q >= 0);
+		GAME_ASSERT(r >= 0);
+
+	} while (
+		hexTiles.hex[q][r] == TILE_UNUSED ||
+		hexTiles.hex[q][r] >= TILE_MIN_POPULATED
+	);
+
+	hexTiles.hex[q][r] = 0x1;
 }
 
 void drawGameRenderTexture() {
@@ -197,40 +162,9 @@ void gamePreInit3() {
 	// load any resources that depend on raylib
 	loadGameRenderTexture();
 	initClickables();
-	initTiles();
+	initHexTiles();
 }
 
-
-void drawTiles() {
-	float offX = 100;
-	float offY = 100;
-	float width = 120;
-	float height = 120;
-	float padx = 15;
-	float pady = 15;
-	for (int y = 0; y < 6; y++) {
-		for (int x = 0; x < 6; x++) {
-			if (getTileValue(x, y) > 0) {
-				Rectangle rec = {.x = (float)x * width + offX + (float)x * padx, .y = (float)y * height + offY + (float)y * pady, width, height};
-				DrawRectangleRec(rec, BLUE);
-			}
-		}
-	}
-}
-void drawGrid() {
-	float offX = 100;
-	float offY = 100;
-	float width = 125;
-	float height = 125;
-	float padx = 10;
-	float pady = 10;
-	for (int i = 0; i < 6; i++) {
-		for (int j = 0; j < 6; j++) {
-			Rectangle rec = {.x = (float)i * width + offX + (float)i * padx, .y = (float)j * height + offY + (float)j * pady, width, height};
-			DrawRectangleRec(rec, WHITE);
-		}
-	}
-}
 /* For flat hexagons. Computes the outer edge coordinate from the inner edge and a count of degrees.
  * Adapted from https://www.redblobgames.com/grids/hexagons/
  * Supports over 360 degrees somehow
@@ -252,34 +186,26 @@ Vector2 hexagonCorner(Vector2 centerPos, float size, float sideNumber) {
 	return point;
 }
 
-// draws a hexagon by triangles and points
-void drawHexagon(Vector2 centrePoint, float size) {
-	// Draw 6 triangles to compose the shape, starting from the centre point.
-	// Wraps around for the first one to always have 3 valid points for every single valid triangle
-	for (int i = 1; i < 6 + 1; i++) {
-		Vector2 leftPoint = hexagonCorner(centrePoint, size, i -1);
-		Vector2 rightPoint = hexagonCorner(centrePoint, size, i);
 
-		DrawTriangle(centrePoint, rightPoint, leftPoint, BROWN);
-	}
 
-	// Draw outline
-	// (A big choppy on corners, but shhh it's fine with small line tickness.)
-	for (int i = 1; i < 6 + 1; i++) {
-		Vector2 leftPoint = hexagonCorner(centrePoint, size, i - 1);
-		Vector2 rightPoint = hexagonCorner(centrePoint, size, i);
-		DrawLineEx(leftPoint, rightPoint, 3, DARKGRAY);
-	}
+float hexVerticalDiff(float size) {
+	return (float)3/(float)2 * size;
 }
 
-void drawHexagon2(Vector2 centrePoint, float size) {
+float hexHorizDiff(float size) {
+	return sqrtf(3) * size;
+}
+
+
+
+void drawHexagon(Vector2 centrePoint, float size, Color color1, Color color2) {
 	// Draw 6 triangles to compose the shape, starting from the centre point.
 	// Wraps around for the first one to always have 3 valid points for every single valid triangle
 	for (int i = 1; i < 6 + 1; i++) {
 		Vector2 leftPoint = hexagonCorner(centrePoint, size, i -1);
 		Vector2 rightPoint = hexagonCorner(centrePoint, size, i);
 
-		DrawTriangle(centrePoint, rightPoint, leftPoint, MAROON);
+		DrawTriangle(centrePoint, rightPoint, leftPoint, color1);
 	}
 
 	// Draw outline
@@ -287,7 +213,7 @@ void drawHexagon2(Vector2 centrePoint, float size) {
 	for (int i = 1; i < 6 + 1; i++) {
 		Vector2 leftPoint = hexagonCorner(centrePoint, size, i - 1);
 		Vector2 rightPoint = hexagonCorner(centrePoint, size, i);
-		DrawLineEx(leftPoint, rightPoint, 3, BLACK);
+		DrawLineEx(leftPoint, rightPoint, 3, color2);
 	}
 }
 
@@ -303,117 +229,121 @@ The vertical distance is vert = 3/4 * height == 3/2 * size.
  *
  */
 
-// // arbitrary number root of a number
-// float froot(float value, float root_number) {
-// 	return powf(value, 1 / root_number);
-// }
-//
-// float root3(float value) {
-// 	return froot(value, 3);
-// }
 
-void tileHexagonHorizEvenRow(int count, Vector2 centrePoint, float size) {
-	float horiz = sqrtf(3) * size;
-	float vert = ((float)3/(float)2) * size;
-	for (int i = 0; i < count; i++) {
-		Vector2 point = centrePoint;
-		point.x += (i * horiz);
-		drawHexagon(point, size);
+void moveHexagons(HexDirection direction) {
+	if (direction == HEXN_SE) {
+		// hacky compactions
+		for (int i = 0; i < fmaxf(MAX_Q, MAX_R); i++) {
+			for (int q = 0; q < MAX_Q; q++) {
+				for (int r = 0; r < MAX_R - 1; r++) {
+					// move all r to r-1 when r+1 is empty and r is occupied
+					float one = hexTiles.hex[q][r];
+					float two = hexTiles.hex[q][r+1];
+
+					if (one >= TILE_MIN_POPULATED && two == TILE_EMPTY) {
+						hexTiles.hex[q][r+1] = one;
+						hexTiles.hex[q][r] = two;
+					}
+				}
+			}
+		}
+	} else {
+		GAME_ASSERT(false);
 	}
 
-	// for horizontal tesselation purposes, the width of a hexagon can be considered root3 of its radius
-
+	spawnRandomHexTile();
 }
 
-float hexVerticalDiff(float size) {
-	return (float)3/(float)2 * size;
-}
 
-float hexHorizDiff(float size) {
-	return sqrtf(3) * size;
-}
+bool debugTiles = false;
+void drawHexTiles() {
+	Vector2 tilesInset = {40, 200};
+	float tileSize = 75;
 
-void tileHexagonVertOddRow(int count, Vector2 centrePoint, float size) {
-	float horiz = sqrtf(3) * size;
-	for (int i = 0; i < count; i++) {
-		Vector2 point = centrePoint;
-		point.x += (i * horiz);
-		drawHexagon(point, size);
+	// draw grid
+	char buff[1024] = {0};
+	for (int r = 0; r < MAX_R; r++) {
+		for (int q = 0; q < MAX_Q; q++) {
+			AxialHex hexUnit = {q, r};
+			bool isUnusedTile = hexTiles.hex[q][r] == TILE_UNUSED;
+
+			Vector2 px = hexToVec2(hexUnit, tileSize);
+
+			// centre the hex of hexes according to the normal display characteristics of a single hexagon.
+			// this is not very precise and doesn't take into account the non-horizontal layout but it's nice
+			px.x += (hexHorizDiff(tileSize) / 2);
+			px.y += (hexVerticalDiff(tileSize) / 2);
+
+			px.x += tilesInset.x; // offset from the top left
+			px.y += tilesInset.y;
+
+
+			if (!isUnusedTile) {
+				drawHexagon(px, tileSize, BROWN, BLACK);
+			} else {
+				if (debugTiles) {
+					drawHexagon(px, tileSize, ORANGE, BLACK);
+				}
+			}
+			buff[0] = '\0';
+		}
 	}
 
+	// draw grid spiral
+	AxialHex centre = {2, 2};
+	for (int i = 0; i < 6; i++) {
+		AxialHex axial = axialDirectNeighbour(centre, i, 1);
+
+		Vector2 px = hexToVec2(axial, tileSize);
+		px.x += tilesInset.x; // offset from the top left
+		px.y += tilesInset.y;
+
+		px.x += (hexHorizDiff(tileSize) / 2);
+		px.y += (hexVerticalDiff(tileSize) / 2);
+
+		drawHexagon(px, tileSize, GRAY, BLACK);
+	}
+
+
+
+	// draw tiles with non-zero value
+	for (int r = 0; r < MAX_R; r++) {
+		for (int q = 0; q < MAX_Q; q++) {
+			AxialHex hexUnit = {q, r};
+			if (!(hexTiles.hex[q][r] >= 1)) {
+				continue;
+			}
+
+			Vector2 px = hexToVec2(hexUnit, tileSize);
+
+			// centre the hex of hexes according to the normal display characteristics of a single hexagon.
+			// this is not very precise and doesn't take into account the non-horizontal layout but it's nice
+			px.x += (hexHorizDiff(tileSize) / 2);
+			px.y += (hexVerticalDiff(tileSize) / 2);
+
+			px.x += tilesInset.x; // offset from the top left
+			px.y += tilesInset.y;
+
+
+			drawHexagon(px, tileSize - 20, BLUE, BLACK);
+			buff[0] = '\0';
+		}
+	}
 }
 
 
 
 
-typedef struct {
-	float hex[20 /*q*/][20 /*r*/];
-} HexTilesQr;
-
-const float TILE_UNUSED = -1;
-
-static HexTilesQr hexTiles = {0};
-
-
-
+int clickCount = 0;
+char fmtBuff [512] = {0};
 void gameDraw() {
 	BeginTextureMode(gameRenderTexture);
 	{
-		char buff[1024] = {0};
-		for (int r = 0; r < 6; r++) {
-			for (int q = 0; q < 6; q++) {
-				AxialHex hexUnit = {q, r};
-				if (hexTiles.hex[q][r] == -1) {
-					continue;
-				}
-
-				Vector2 px = hexToVec2(hexUnit, 50);
-				px.x += 50; // offset from the top left
-				px.y += 50;
-
-				drawHexagon(px, 50);
-				buff[0] = '\0';
-			}
-		}
-
-
-		for (int q = 0; q < 6; q++) {
-			for (int r = 0; r < 6; r++) {
-				hexTiles.hex[q][r] = (float)1;
-				AxialHex hex = {q, r};
-				AxialHex centre = {2, 2};
-				float distance = axialManhattanDistance(centre, hex);
-				if (distance > 2) {
-					hexTiles.hex[q][r] = TILE_UNUSED;
-				}
-			}
-		}
-
-		AxialHex centre = {2, 2};
-		for (int i = 0; i < 6; i++) {
-			AxialHex axial = axialDirectNeighbour(centre, i);
-
-			Vector2 px = hexToVec2(axial, 50);
-			px.x += 50; // offset from the top left
-			px.y += 50;
-
-			drawHexagon2(px, 50);
-		}
-
-		// drawGrid();
-		// drawTiles();
-		// drawClickables();
-		// DrawText("Title", 450, 25, 55, RED);
-		//
-		//
 		ClearBackground(RAYWHITE);
-		// DrawRectangle(debug_box_x, 10, 30, 30, ORANGE);
-		// Vector2 point = {500, 500};
-		// // drawHexagon(point, 100);
-		// tileHexagonHorizEvenRow(4, point, 50);
-		//
-		// Vector2 point2 = {500 + hexHorizDiff(50)/2 , 500+ hexVerticalDiff(50)};
-		// tileHexagonVertOddRow(4, point2, 50);
+		drawClickables();
+		drawHexTiles();
+		sprintf(fmtBuff, "%i", clickCount);
+		DrawText(fmtBuff, 1, 1, 40, RED);
 
 	}
 	EndTextureMode();
@@ -427,21 +357,34 @@ void gameDraw() {
 }
 
 
-
-
+float lmbCooldownGoal = 0.5f;
+float lmbCooldown = 1.0f;
 
 void tickClickables () {
 	Vector2 mouse = getMousePosRel();
 
 	// other mouse functions don't work on wasm! IsMouseButtonPressed(), IsMouseButtonReleased()
-	bool wasLeftclickPressed = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
+	// hacky button debounce logic
+	bool wasLeftclickPressed = false;
+	bool buttonDown = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
+	lmbCooldown += GetFrameTime();
+	if (buttonDown) {
+		// assume if the user holds down the button, they want to spam it,
+		// otherwise assume 0.5 seconds between valid clicks
+		if (lmbCooldown >= lmbCooldownGoal) {
+			wasLeftclickPressed = true;
+			lmbCooldown = 0;
+		}
+	}
+
 
 	for (int i = 0; i < clickableCount; i++) {
 		bool isButtonHovered = CheckCollisionPointRec(mouse, clickables[i].position);
-		if (wasLeftclickPressed) {
+		if (wasLeftclickPressed && clickables[i].tickCooldownCurrent) {
 			if (isButtonHovered) {
 				clickables[i].tickCooldownCurrent = 0;
-				shiftTiles(clickables[i].direction);
+				moveHexagons(clickables[i].direction);
+				clickCount += 1;
 			}
 		}
 	}
@@ -456,8 +399,9 @@ void tickClickables () {
 
 }
 
+
+float tSinceLastSpawn = 0;
 void gameTick() {
-	debug_box_x += 10;
 	tickClickables();
 }
 

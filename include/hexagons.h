@@ -102,7 +102,7 @@ AxialHex axialDirectionVectors[] = {
 
 
 
-CubeHex cubeHexDirectionalVectors[] = {
+CubeHex cubeHexDiagonalDirectionalVectors[] = {
     {2.0f, -1.0f, -1.0f},
     {+1, -2, +1},
     {-1, -1, +2},
@@ -123,7 +123,7 @@ typedef enum {
 
 AxialHex axialDiagonalNeighbour(AxialHex axial, HexDirection direction) {
     GAME_ASSERT(direction < 6);
-    AxialHex vector = cubeToAxial(cubeHexDirectionalVectors[direction]);
+    AxialHex vector = cubeToAxial(cubeHexDiagonalDirectionalVectors[direction]);
     axial.r += vector.r;
     axial.q += vector.q;
 
@@ -131,11 +131,11 @@ AxialHex axialDiagonalNeighbour(AxialHex axial, HexDirection direction) {
 }
 
 
-AxialHex axialDirectNeighbour(AxialHex axial, HexDirection direction) {
+AxialHex axialDirectNeighbour(AxialHex axial, HexDirection direction, int count) {
     GAME_ASSERT(direction < 6);
     AxialHex vector = axialDirectionVectors[direction];
-    axial.r += vector.r;
-    axial.q += vector.q;
+    axial.r += vector.r * (float)count;
+    axial.q += vector.q * (float)count;
 
     return axial;
 }
