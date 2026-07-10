@@ -121,11 +121,11 @@ typedef enum {
 }  HexDirection;
 
 
-AxialHex axialDiagonalNeighbour(AxialHex axial, HexDirection direction) {
+AxialHex axialDiagonalNeighbour(AxialHex axial, HexDirection direction, int count) {
     GAME_ASSERT(direction < 6);
     AxialHex vector = cubeToAxial(cubeHexDiagonalDirectionalVectors[direction]);
-    axial.r += vector.r;
-    axial.q += vector.q;
+    axial.r += vector.r * (float)count;
+    axial.q += vector.q * (float)count;
 
     return axial;
 }

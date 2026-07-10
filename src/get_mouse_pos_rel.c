@@ -28,7 +28,5 @@ Vector2 getMousePosRel() {
     rely = fclamp(rely, 0, gameRenderTextureSize.height);
 
     Vector2 relPos = {relx, rely};
-
-
     return relPos;
 }

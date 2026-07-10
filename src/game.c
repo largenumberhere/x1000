@@ -8,6 +8,7 @@
 
 #include "raylib.h"
 #include "raymath.h"
+#include <string.h>
 #include "../include/game_error.h"
 #include "../include/get_mouse_pos_rel.h"
 #ifndef PLATFORM_DESKTOP
@@ -16,6 +17,13 @@
 #include "../include/game.h"
 #include "../include/hexagons.h"
 
+
+Color clrPaleGreen  = {224,243,89, 255}  ;
+Color clrOrange     = {236,143,18, 255}  ;
+Color clrDarkGreen  = {89,140,10, 255}   ;
+Color clrMedGreen   = {111,223,77, 255}  ;
+Color clrRed        = {200,13,77, 255}   ;
+
 RenderTexture2D gameRenderTexture = {0};
 Rectangle gameRenderTextureSize = {.x=0, .y=0,.width= 1000, .height=1000};
 Rectangle gameDestinationScreenSize = {0, 0, 720, 720};
@@ -23,9 +31,48 @@ Rectangle gameDestinationScreenSize = {0, 0, 720, 720};
 bool gameTerminateWindowImmediately = false;
 const char* gameVersion = "0.2";
 
+
+void drawArrow(Vector2 headSpot, float angle, float length) {
+	float thickness = 10;
+	angle -= 180;
+	Vector2 other = {0, length};
+	float radiansFactor = (PI / 180);
+	float radians = angle * radiansFactor;
+
+
+	Vector2 rotated = Vector2Rotate(other, radians);
+	Vector2 b = Vector2Add(headSpot, rotated);
+	DrawLineEx(headSpot, b, thickness, RED);
+
+
+	Vector2 leftWedge = {0, 40};
+	leftWedge = Vector2Rotate(leftWedge, radians);
+	leftWedge = Vector2Rotate(leftWedge , 30*radiansFactor);
+	leftWedge = Vector2Add(headSpot, leftWedge);
+	DrawLineEx(headSpot, leftWedge, thickness, RED);
+
+	Vector2 rightWedge = {0, 40};
+	rightWedge = Vector2Rotate(rightWedge, radians);
+	rightWedge = Vector2Rotate(rightWedge , -30*radiansFactor);
+	rightWedge = Vector2Add(headSpot, rightWedge);
+
+	DrawLineEx(headSpot, rightWedge, thickness, RED);
+
+}
+
+
+typedef enum {
+	CLICK_MOVE_NW,
+	CLICK_MOVE_E,
+	CLICK_MOVE_NE,
+	CLICK_MOVE_SE,
+	CLICK_MOVE_W,
+} ClickMove;
+
+
 typedef struct {
 	Rectangle position;
-	HexDirection direction;
+	ClickMove direction;
 	float tickCooldownCurrent;
 	float tickCooldownMax;
 } GameClickable;
@@ -50,6 +97,10 @@ const float TILE_EMPTY = 0;
 const float TILE_MIN_POPULATED = 1;
 
 
+AxialHex newTile = {0};
+AxialHex prevNewTile = {0};
+float deltaSinceNewTile = 0;
+
 static HexTilesQr hexTiles = {0};
 void initHexTiles() {
 	for (int q = 0; q < MAX_Q; q++) {
@@ -73,31 +124,75 @@ static int64_t clickableCount = 0;
 
 
 void initClickables() {
-	GameClickable upArrow = {.direction = HEXN_SE, .position = {0, 0, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
-	// GameClickable downArrow = {.direction = GameDirectionDown, .position = {0, 100, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
-	// GameClickable leftArrow = {.direction = GameDirectionLeft, .position = {0, 200, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
-	// GameClickable rightArrow = {.direction = GameDirectionRight, .position = {0, 300, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
+	GameClickable seArrow = {.direction = CLICK_MOVE_SE, .position = {700, 900, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
+	GameClickable nwArrow = {.direction = CLICK_MOVE_NW, .position = {20, 100, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
+	GameClickable neArrow = {.direction = CLICK_MOVE_E, .position = {20, 200, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
+	GameClickable swArrow = {.direction = CLICK_MOVE_W, .position = {20, 300, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
 
-	clickables[clickableCount++] = upArrow;
-	// clickables[clickableCount++] = downArrow;
-	// clickables[clickableCount++] = leftArrow;
-	// clickables[clickableCount++] = rightArrow;
+	clickables[clickableCount++] = seArrow;
+	clickables[clickableCount++] = nwArrow;
+
+	clickables[clickableCount++] = neArrow;
+	clickables[clickableCount++] = swArrow;
+}
+
+void drawCardinalArrow(ClickMove clickMoveDirection, Vector2 origin, float offsetX, float offsetY) {
+	float angle = 180;	// the origin points down for the arrow's implementation;
+	switch (clickMoveDirection) {
+		case CLICK_MOVE_NW:
+			angle += 310;
+			break;
+		case CLICK_MOVE_E:
+			angle += 90;
+			break;
+		case CLICK_MOVE_NE:
+			angle += 45;
+			break;
+		case CLICK_MOVE_SE:
+			angle += 135;
+			break;
+		case CLICK_MOVE_W:
+			angle += 270;
+			break;
+		default:
+		GAME_ASSERT(false);
+	}
+
+	Vector2 offset = {offsetX, offsetY};
+	Vector2 pos = Vector2Add(origin, offset);
+	drawArrow(pos, angle, 100);
 }
 
 void drawClickables() {
 	for (int i = 0; i < clickableCount; i++) {
 		if (clickables[i].tickCooldownCurrent < clickables[i].tickCooldownMax) {
-			DrawRectangleRec(clickables[i].position, BLUE);
+			DrawRectangleRec(clickables[i].position, clrPaleGreen);
 		} else {
-			DrawRectangleRec(clickables[i].position, BROWN);
+			DrawRectangleRec(clickables[i].position, clrDarkGreen);
 		}
 
 		int size = 80;
 		Vector2 pos = { clickables[i].position.x, clickables[i].position.y};
+
 		switch (clickables[i].direction) {
-			case HEXN_SE:
-				DrawText("South East \\", pos.x, pos.y, size, WHITE);
+			case CLICK_MOVE_SE:
+				DrawText("SE", pos.x, pos.y, size, WHITE);
+				drawCardinalArrow(clickables[i].direction, pos, 170, 70);
 				break;
+			case CLICK_MOVE_NW:
+				DrawText("NW", pos.x, pos.y, size, WHITE);
+				drawCardinalArrow(clickables[i].direction, pos, 100, 20);
+
+				break;
+			case CLICK_MOVE_E:
+				DrawText("E", pos.x, pos.y, size, WHITE);
+				drawCardinalArrow(clickables[i].direction, pos, 200, 50);
+				break;
+			case CLICK_MOVE_W:
+				DrawText("W", pos.x, pos.y, size, WHITE);
+				drawCardinalArrow(clickables[i].direction, pos, 100, 50);
+				break;
+
 			// case GameDirectionDown:
 			// 	DrawText("v", pos.x, pos.y, size, WHITE);
 			//
@@ -116,7 +211,24 @@ void drawClickables() {
 
 }
 
+bool canSpawnTile() {
+	for (int q = 0; q < MAX_Q; q++) {
+		for (int r = 0; r < MAX_R; r++) {
+			if (hexTiles.hex[q][r] == TILE_EMPTY) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 void spawnRandomHexTile() {
+	if (!canSpawnTile()) {
+		return;
+	}
+
+
 	int q = 0;
 	int r = 0;
 	do {
@@ -135,6 +247,10 @@ void spawnRandomHexTile() {
 	);
 
 	hexTiles.hex[q][r] = 0x1;
+	AxialHex axial = {q, r};
+	newTile = axial;
+	prevNewTile = newTile;
+	deltaSinceNewTile = 0;
 }
 
 void drawGameRenderTexture() {
@@ -163,6 +279,9 @@ void gamePreInit3() {
 	loadGameRenderTexture();
 	initClickables();
 	initHexTiles();
+	for (int i = 0; i < 2; i++) {
+		spawnRandomHexTile();
+	}
 }
 
 /* For flat hexagons. Computes the outer edge coordinate from the inner edge and a count of degrees.
@@ -197,6 +316,16 @@ float hexHorizDiff(float size) {
 }
 
 
+void drawHexagonOutline(Vector2 centrePoint, float size, Color color) {
+	// Draw outline
+	// (A big choppy on corners, but shhh it's fine with small line tickness.)
+	for (int i = 1; i < 6 + 1; i++) {
+		Vector2 leftPoint = hexagonCorner(centrePoint, size, i - 1);
+		Vector2 rightPoint = hexagonCorner(centrePoint, size, i);
+		DrawLineEx(leftPoint, rightPoint, 3, color);
+	}
+}
+
 
 void drawHexagon(Vector2 centrePoint, float size, Color color1, Color color2) {
 	// Draw 6 triangles to compose the shape, starting from the centre point.
@@ -208,30 +337,21 @@ void drawHexagon(Vector2 centrePoint, float size, Color color1, Color color2) {
 		DrawTriangle(centrePoint, rightPoint, leftPoint, color1);
 	}
 
-	// Draw outline
-	// (A big choppy on corners, but shhh it's fine with small line tickness.)
-	for (int i = 1; i < 6 + 1; i++) {
-		Vector2 leftPoint = hexagonCorner(centrePoint, size, i - 1);
-		Vector2 rightPoint = hexagonCorner(centrePoint, size, i);
-		DrawLineEx(leftPoint, rightPoint, 3, color2);
-	}
+	drawHexagonOutline(centrePoint, size, color2);
+
 }
 
 
-
-/*
-*  Next we want to put several hexagons together.
-*  The spacing will depend on both the outer circle's radius (size) and the inner circle's radius (inradius).
-
-In the pointy orientation, the horizontal distance between adjacent hexagon centers is horiz = width == sqrt(3) * size == 2 * inradius.
-The vertical distance is vert = 3/4 * height == 3/2 * size.
- *
- *
- */
+// Vector2 textMiddle(const char* text, float size) {
+// 	Vector2 textSize = MeasureTextEx(GetFontDefault(), text, size, 0);
+//
+//
+// }
 
 
-void moveHexagons(HexDirection direction) {
-	if (direction == HEXN_SE) {
+
+void moveHexagons(ClickMove direction) {
+	if (direction == CLICK_MOVE_SE) {
 		// hacky compactions
 		for (int i = 0; i < fmaxf(MAX_Q, MAX_R); i++) {
 			for (int q = 0; q < MAX_Q; q++) {
@@ -240,6 +360,7 @@ void moveHexagons(HexDirection direction) {
 					float one = hexTiles.hex[q][r];
 					float two = hexTiles.hex[q][r+1];
 
+					// remove gap
 					if (one >= TILE_MIN_POPULATED && two == TILE_EMPTY) {
 						hexTiles.hex[q][r+1] = one;
 						hexTiles.hex[q][r] = two;
@@ -247,6 +368,211 @@ void moveHexagons(HexDirection direction) {
 				}
 			}
 		}
+
+		bool tileMerged[MAX_Q][MAX_R] = {0};
+		// merge neighbours
+		for (int q = 0; q < MAX_Q; q++) {
+			for (int r = 0; r < MAX_R - 1; r++) {
+				// move all r to r-1 when r+1 is empty and r is occupied
+				float one = hexTiles.hex[q][r];
+				float two = hexTiles.hex[q][r+1];
+
+				// remove gap
+				bool isSameNonzeroKind = (one >= TILE_MIN_POPULATED) && two == one;
+				if (isSameNonzeroKind) {
+					if (tileMerged[q][r] || tileMerged[q][r+1]) {
+						continue;
+					}
+
+					tileMerged[q][r+1] = true;
+
+					hexTiles.hex[q][r+1] = one + one;
+					hexTiles.hex[q][r] = TILE_EMPTY;
+				}
+			}
+		}
+
+		// hacky compactions
+		for (int i = 0; i < fmaxf(MAX_Q, MAX_R); i++) {
+			for (int q = 0; q < MAX_Q; q++) {
+				for (int r = 0; r < MAX_R - 1; r++) {
+					// move all r to r-1 when r+1 is empty and r is occupied
+					float one = hexTiles.hex[q][r];
+					float two = hexTiles.hex[q][r+1];
+
+					// remove gap
+					if (one >= TILE_MIN_POPULATED && two == TILE_EMPTY) {
+						hexTiles.hex[q][r+1] = one;
+						hexTiles.hex[q][r] = two;
+					}
+				}
+			}
+		}
+
+
+	} else if (direction == CLICK_MOVE_NW) {
+		// hacky compactions
+		for (int i = 0; i < fmaxf(MAX_Q, MAX_R); i++) {
+			for (int q = 0; q < MAX_Q; q++) {
+				for (int r = 0; r < MAX_R - 1; r++) {
+					// move all r to r-1 when r+1 is empty and r is occupied
+					float one = hexTiles.hex[q][r+1];
+					float two = hexTiles.hex[q][r];
+
+					// remove gap
+					if (one >= TILE_MIN_POPULATED && two == TILE_EMPTY) {
+						hexTiles.hex[q][r] = one;
+						hexTiles.hex[q][r+1] = two;
+					}
+				}
+			}
+		}
+
+
+		bool tileMerged[MAX_Q][MAX_R] = {0};
+		// merge neighbours
+		for (int q = 0; q < MAX_Q; q++) {
+			for (int r = 0; r < MAX_R - 1; r++) {
+				// move all r+1 to r when r is empty and r+1 is occupied
+				float one = hexTiles.hex[q][r+1];
+				float two = hexTiles.hex[q][r];
+
+				// remove gap
+				bool isSameNonzeroKind = (two >= TILE_MIN_POPULATED) && two == one;
+				if (isSameNonzeroKind) {
+					if (tileMerged[q][r] || tileMerged[q][r+1]) {
+						continue;
+					}
+
+					tileMerged[q][r] = true;
+
+					hexTiles.hex[q][r] = one + one;
+					hexTiles.hex[q][r+1] = TILE_EMPTY;
+				}
+			}
+		}
+
+		// hacky compactions
+		for (int i = 0; i < fmaxf(MAX_Q, MAX_R); i++) {
+			for (int q = 0; q < MAX_Q; q++) {
+				for (int r = 0; r < MAX_R - 1; r++) {
+					// move all r to r-1 when r+1 is empty and r is occupied
+					float one = hexTiles.hex[q][r+1];
+					float two = hexTiles.hex[q][r];
+
+					// remove gap
+					if (one >= TILE_MIN_POPULATED && two == TILE_EMPTY) {
+						hexTiles.hex[q][r] = one;
+						hexTiles.hex[q][r+1] = two;
+					}
+				}
+			}
+		}
+
+	}
+
+	else if (direction == CLICK_MOVE_W) {
+		// hacky compactions
+		for (int i = 0; i < fmaxf(MAX_Q, MAX_R); i++) {
+			for (int r = 0; r < MAX_R; r++) {
+				for (int q = 0; q < MAX_Q - 1; q++) {
+
+					float one = hexTiles.hex[q+1][r];
+					float two = hexTiles.hex[q][r];
+
+					// remove gap
+					if (one >= TILE_MIN_POPULATED && two == TILE_EMPTY) {
+						hexTiles.hex[q][r] = one;
+						hexTiles.hex[q+1][r] = two;
+					}
+				}
+			}
+		}
+
+		bool tileMerged[MAX_Q][MAX_R] = {0};
+		// merge neighbours
+		for (int r = 0; r < MAX_R - 1; r++) {
+			for (int q = 0; q < MAX_Q -1; q++) {
+				// move all r+1 to r when r is empty and r+1 is occupied
+				float one = hexTiles.hex[q+1][r];
+				float two = hexTiles.hex[q][r];
+
+				// remove gap
+				bool isSameNonzeroKind = (two >= TILE_MIN_POPULATED) && two == one;
+				if (isSameNonzeroKind) {
+					if (tileMerged[q][r] || tileMerged[q+1][r]) {
+						continue;
+					}
+
+					tileMerged[q][r] = true;
+
+					hexTiles.hex[q][r] = one + one;
+					hexTiles.hex[q+1][r] = TILE_EMPTY;
+				}
+			}
+		}
+
+		// hacky compactions
+		for (int i = 0; i < fmaxf(MAX_Q, MAX_R); i++) {
+			for (int r = 0; r < MAX_R; r++) {
+				for (int q = 0; q < MAX_Q - 1; q++) {
+
+					float one = hexTiles.hex[q+1][r];
+					float two = hexTiles.hex[q][r];
+
+					// remove gap
+					if (one >= TILE_MIN_POPULATED && two == TILE_EMPTY) {
+						hexTiles.hex[q][r] = one;
+						hexTiles.hex[q+1][r] = two;
+					}
+				}
+			}
+		}
+
+	} else if (direction == CLICK_MOVE_E) {
+		// hacky compactions
+		for (int i = 0; i < fmaxf(MAX_Q, MAX_R); i++) {
+			for (int r = 0; r < MAX_R; r++) {
+				for (int q = 0; q < MAX_Q - 1; q++) {
+
+					float one = hexTiles.hex[q][r];
+					float two = hexTiles.hex[q+1][r];
+
+					// remove gap
+					if (one >= TILE_MIN_POPULATED && two == TILE_EMPTY) {
+						hexTiles.hex[q+1][r] = one;
+						hexTiles.hex[q][r] = two;
+					}
+				}
+			}
+		}
+
+		// merge neighbours
+		bool tileMerged[MAX_Q][MAX_R] = {0};
+		for (int r = 0; r < MAX_R - 1; r++) {
+			for (int q = 0; q < MAX_Q -1; q++) {
+				// move all r+1 to r when r is empty and r+1 is occupied
+				float one = hexTiles.hex[q][r];
+				float two = hexTiles.hex[q+1][r];
+
+				// remove gap
+				bool isSameNonzeroKind = (two >= TILE_MIN_POPULATED) && two == one;
+				if (isSameNonzeroKind) {
+					if (tileMerged[q][r] || tileMerged[q][r]) {
+						continue;
+					}
+
+					tileMerged[q+1][r] = true;
+
+					hexTiles.hex[q+1][r] = one + one;
+					hexTiles.hex[q][r] = TILE_EMPTY;
+				}
+			}
+		}
+
+
+
+
 	} else {
 		GAME_ASSERT(false);
 	}
@@ -254,14 +580,12 @@ void moveHexagons(HexDirection direction) {
 	spawnRandomHexTile();
 }
 
-
 bool debugTiles = false;
 void drawHexTiles() {
 	Vector2 tilesInset = {40, 200};
 	float tileSize = 75;
 
-	// draw grid
-	char buff[1024] = {0};
+	// draw plain grid
 	for (int r = 0; r < MAX_R; r++) {
 		for (int q = 0; q < MAX_Q; q++) {
 			AxialHex hexUnit = {q, r};
@@ -279,32 +603,28 @@ void drawHexTiles() {
 
 
 			if (!isUnusedTile) {
-				drawHexagon(px, tileSize, BROWN, BLACK);
+				drawHexagon(px, tileSize, clrMedGreen, BLACK);
 			} else {
 				if (debugTiles) {
 					drawHexagon(px, tileSize, ORANGE, BLACK);
 				}
 			}
-			buff[0] = '\0';
 		}
 	}
 
-	// draw grid spiral
-	AxialHex centre = {2, 2};
-	for (int i = 0; i < 6; i++) {
-		AxialHex axial = axialDirectNeighbour(centre, i, 1);
 
-		Vector2 px = hexToVec2(axial, tileSize);
+
+	AxialHex centre = {2, 2};
+	{
+		// draw centre tile
+		Vector2 px = hexToVec2(centre, tileSize);
 		px.x += tilesInset.x; // offset from the top left
 		px.y += tilesInset.y;
 
 		px.x += (hexHorizDiff(tileSize) / 2);
 		px.y += (hexVerticalDiff(tileSize) / 2);
-
-		drawHexagon(px, tileSize, GRAY, BLACK);
+		drawHexagon(px, tileSize, clrPaleGreen, BLACK);
 	}
-
-
 
 	// draw tiles with non-zero value
 	for (int r = 0; r < MAX_R; r++) {
@@ -325,9 +645,97 @@ void drawHexTiles() {
 			px.y += tilesInset.y;
 
 
-			drawHexagon(px, tileSize - 20, BLUE, BLACK);
-			buff[0] = '\0';
+			drawHexagon(px, tileSize - 20, clrDarkGreen, clrOrange);
 		}
+	}
+
+	char hexHexBuff[16] = {0};
+	// draw text on hexagons
+	for (int r = 0; r < MAX_R; r++) {
+		for (int q = 0; q < MAX_Q; q++) {
+			bool isTileEmpty = hexTiles.hex[q][r] == TILE_EMPTY;
+			bool isUnusedTile = hexTiles.hex[q][r] == TILE_UNUSED;
+
+			AxialHex hexUnit = {q, r};
+			Vector2 px = hexToVec2(hexUnit, tileSize);
+
+			// centre the hex of hexes according to the normal display characteristics of a single hexagon.
+			// this is not very precise and doesn't take into account the non-horizontal layout but it's nice
+			px.x += (hexHorizDiff(tileSize) / 2);
+			px.y += (hexVerticalDiff(tileSize) / 2);
+
+			px.x += tilesInset.x; // offset from the top left
+			px.y += tilesInset.y;
+
+
+			float value = hexTiles.hex[q][r];
+
+			// float to string
+			sprintf(hexHexBuff, "0x%x", (int) value);
+			if (value == -1) {
+			  hexHexBuff[0] = '\0';
+				strcat(hexHexBuff, "-0x1");
+			}
+			//
+
+			if ((!isUnusedTile || debugTiles) && !isTileEmpty) {
+				DrawText(hexHexBuff, px.x, px.y, 25, GREEN);
+			}
+		}
+	}
+
+	// draw dots on the edges to visually indicate tile magnitude
+	for (int r = 0; r < MAX_R; r++) {
+		for (int q = 0; q < MAX_Q; q++) {
+			AxialHex hexUnit = {q, r};
+
+			Vector2 px = hexToVec2(hexUnit, tileSize);
+			px.x += (hexHorizDiff(tileSize) / 2);
+			px.y += (hexVerticalDiff(tileSize) / 2);
+
+			px.x += tilesInset.x; // offset from the top left
+			px.y += tilesInset.y;
+
+
+			bool isUnusedTile = hexTiles.hex[q][r] == TILE_UNUSED;
+
+			if (!isUnusedTile || debugTiles) {
+				float tileValue = hexTiles.hex[q][r];
+				int exponent =  (int) sqrtf(tileValue);
+				exponent -= 1;
+				exponent = Clamp(exponent, 0, 6);
+
+				int max = (int) fminf(exponent, 6);
+				for (int i = 0; i < max; i++) {
+
+					Vector2 insetCorner = hexagonCorner(px, tileSize-25, i);
+
+
+					Vector2 insetCorner2 = hexagonCorner(px, tileSize-25, i+1);
+
+					Vector2 point1 = Vector2Lerp(insetCorner, insetCorner2, 0.25);
+					Vector2 point2 = Vector2Lerp(insetCorner, insetCorner2, 0.75);
+
+
+					DrawLineEx(point1, point2, 13, clrOrange);
+				}
+			}
+		}
+	}
+
+	// draw new tile
+	{
+		Vector2 px = hexToVec2(newTile, tileSize);
+		px.x += (hexHorizDiff(tileSize) / 2);
+		px.y += (hexVerticalDiff(tileSize) / 2);
+
+		px.x += tilesInset.x; // offset from the top left
+		px.y += tilesInset.y;
+		float animDurationSecs = 1.0;
+		float ratio = deltaSinceNewTile / animDurationSecs;
+		float alpha = Lerp(1, 0, ratio);
+
+		drawHexagon(px, tileSize-25 ,ColorAlpha(ORANGE ,alpha), clrDarkGreen );
 	}
 }
 
@@ -340,10 +748,12 @@ void gameDraw() {
 	BeginTextureMode(gameRenderTexture);
 	{
 		ClearBackground(RAYWHITE);
+
 		drawClickables();
 		drawHexTiles();
 		sprintf(fmtBuff, "%i", clickCount);
 		DrawText(fmtBuff, 1, 1, 40, RED);
+
 
 	}
 	EndTextureMode();
@@ -403,6 +813,7 @@ void tickClickables () {
 float tSinceLastSpawn = 0;
 void gameTick() {
 	tickClickables();
+	deltaSinceNewTile += GetFrameTime();
 }
 
 
