@@ -18,10 +18,10 @@
 #include "../include/hexagons.h"
 
 
-Color clrPaleGreen  = {224,243,89, 255}  ;
+Color clrYellow  = {224,243,89, 255}  ;
 Color clrOrange     = {236,143,18, 255}  ;
 Color clrDarkGreen  = {89,140,10, 255}   ;
-Color clrMedGreen   = {111,223,77, 255}  ;
+Color clrLightGreen   = {111,223,77, 255}  ;
 Color clrRed        = {200,13,77, 255}   ;
 
 RenderTexture2D gameRenderTexture = {0};
@@ -29,7 +29,7 @@ Rectangle gameRenderTextureSize = {.x=0, .y=0,.width= 1000, .height=1000};
 Rectangle gameDestinationScreenSize = {0, 0, 720, 720};
 
 bool gameTerminateWindowImmediately = false;
-const char* gameVersion = "0.2";
+const char* gameVersion = "0.3";
 
 
 void drawArrow(Vector2 headSpot, float angle, float length) {
@@ -42,21 +42,21 @@ void drawArrow(Vector2 headSpot, float angle, float length) {
 
 	Vector2 rotated = Vector2Rotate(other, radians);
 	Vector2 b = Vector2Add(headSpot, rotated);
-	DrawLineEx(headSpot, b, thickness, RED);
+	DrawLineEx(headSpot, b, thickness, clrOrange);
 
 
 	Vector2 leftWedge = {0, 40};
 	leftWedge = Vector2Rotate(leftWedge, radians);
 	leftWedge = Vector2Rotate(leftWedge , 30*radiansFactor);
 	leftWedge = Vector2Add(headSpot, leftWedge);
-	DrawLineEx(headSpot, leftWedge, thickness, RED);
+	DrawLineEx(headSpot, leftWedge, thickness, clrOrange);
 
 	Vector2 rightWedge = {0, 40};
 	rightWedge = Vector2Rotate(rightWedge, radians);
 	rightWedge = Vector2Rotate(rightWedge , -30*radiansFactor);
 	rightWedge = Vector2Add(headSpot, rightWedge);
 
-	DrawLineEx(headSpot, rightWedge, thickness, RED);
+	DrawLineEx(headSpot, rightWedge, thickness, clrOrange);
 
 }
 
@@ -166,7 +166,7 @@ void drawCardinalArrow(ClickMove clickMoveDirection, Vector2 origin, float offse
 void drawClickables() {
 	for (int i = 0; i < clickableCount; i++) {
 		if (clickables[i].tickCooldownCurrent < clickables[i].tickCooldownMax) {
-			DrawRectangleRec(clickables[i].position, clrPaleGreen);
+			DrawRectangleRec(clickables[i].position, clrYellow);
 		} else {
 			DrawRectangleRec(clickables[i].position, clrDarkGreen);
 		}
@@ -295,8 +295,8 @@ void gamePreInit3() {
  *	  *****
  *	( ^ a flat-top hexagon  )
  */
-Vector2 hexagonCorner(Vector2 centerPos, float size, float sideNumber) {
-	float degrees = 60 * sideNumber - 30;
+Vector2 hexagonCorner(Vector2 centerPos, float size, float sideNumber, float offsetRoation) {
+	float degrees = 60 * sideNumber - 30 + offsetRoation;
 	float radians = PI / 180 * degrees;
 
 	Vector2 point = {centerPos.x + size * cos(radians),
@@ -316,12 +316,12 @@ float hexHorizDiff(float size) {
 }
 
 
-void drawHexagonOutline(Vector2 centrePoint, float size, Color color) {
+void drawHexagonOutline(Vector2 centrePoint, float size, Color color, float roationOffset) {
 	// Draw outline
 	// (A big choppy on corners, but shhh it's fine with small line tickness.)
 	for (int i = 1; i < 6 + 1; i++) {
-		Vector2 leftPoint = hexagonCorner(centrePoint, size, i - 1);
-		Vector2 rightPoint = hexagonCorner(centrePoint, size, i);
+		Vector2 leftPoint = hexagonCorner(centrePoint, size, i - 1, roationOffset);
+		Vector2 rightPoint = hexagonCorner(centrePoint, size, i, roationOffset);
 		DrawLineEx(leftPoint, rightPoint, 3, color);
 	}
 }
@@ -331,14 +331,25 @@ void drawHexagon(Vector2 centrePoint, float size, Color color1, Color color2) {
 	// Draw 6 triangles to compose the shape, starting from the centre point.
 	// Wraps around for the first one to always have 3 valid points for every single valid triangle
 	for (int i = 1; i < 6 + 1; i++) {
-		Vector2 leftPoint = hexagonCorner(centrePoint, size, i -1);
-		Vector2 rightPoint = hexagonCorner(centrePoint, size, i);
+		Vector2 leftPoint = hexagonCorner(centrePoint, size, i -1, 0);
+		Vector2 rightPoint = hexagonCorner(centrePoint, size, i, 0);
 
 		DrawTriangle(centrePoint, rightPoint, leftPoint, color1);
 	}
 
-	drawHexagonOutline(centrePoint, size, color2);
+	drawHexagonOutline(centrePoint, size, color2, 0);
 
+}
+
+void drawHexagonR(Vector2 centrePoint, float size, Color color1, Color color2, float roation) {
+	for (int i = 1; i < 6 + 1; i++) {
+		Vector2 leftPoint = hexagonCorner(centrePoint, size, i -1, roation);
+		Vector2 rightPoint = hexagonCorner(centrePoint, size, i, roation);
+
+		DrawTriangle(centrePoint, rightPoint, leftPoint, color1);
+	}
+
+	drawHexagonOutline(centrePoint, size, color2, roation);
 }
 
 
@@ -582,8 +593,22 @@ void moveHexagons(ClickMove direction) {
 
 bool debugTiles = false;
 void drawHexTiles() {
+	// draw bg hexagon
+	{;
+
+		float size = 400;
+		Vector2 px = {gameRenderTextureSize.width / 2, gameDestinationScreenSize.height / 2};
+		px.y += 100;
+
+
+		drawHexagonR(px, size, clrYellow, clrDarkGreen, 30);
+		drawHexagonR(px, size -10, clrDarkGreen, clrDarkGreen, 30);
+	}
+
 	Vector2 tilesInset = {40, 200};
 	float tileSize = 75;
+
+
 
 	// draw plain grid
 	for (int r = 0; r < MAX_R; r++) {
@@ -603,7 +628,7 @@ void drawHexTiles() {
 
 
 			if (!isUnusedTile) {
-				drawHexagon(px, tileSize, clrMedGreen, BLACK);
+				drawHexagon(px, tileSize, clrLightGreen, BLACK);
 			} else {
 				if (debugTiles) {
 					drawHexagon(px, tileSize, ORANGE, BLACK);
@@ -612,6 +637,32 @@ void drawHexTiles() {
 		}
 	}
 
+
+	{
+		// draw dots in centres
+		for (int r = 0; r < MAX_R; r++) {
+			for (int q = 0; q < MAX_Q; q++) {
+				AxialHex hexUnit = {q, r};
+
+				Vector2 px = hexToVec2(hexUnit, tileSize);
+				px.x += (hexHorizDiff(tileSize) / 2);
+				px.y += (hexVerticalDiff(tileSize) / 2);
+
+				px.x += tilesInset.x; // offset from the top left
+				px.y += tilesInset.y;
+
+
+				bool isUnusedTile = hexTiles.hex[q][r] == TILE_UNUSED;
+
+				if (!isUnusedTile || debugTiles) {
+
+					Color invisible = {0, 0, 0, 0};
+					drawHexagon(px, 30, clrDarkGreen, clrDarkGreen);
+					drawHexagon(px, 25, clrLightGreen, clrLightGreen);
+				}
+			}
+		}
+	}
 
 
 	AxialHex centre = {2, 2};
@@ -623,7 +674,7 @@ void drawHexTiles() {
 
 		px.x += (hexHorizDiff(tileSize) / 2);
 		px.y += (hexVerticalDiff(tileSize) / 2);
-		drawHexagon(px, tileSize, clrPaleGreen, BLACK);
+		drawHexagon(px, tileSize, clrYellow, BLACK);
 	}
 
 	// draw tiles with non-zero value
@@ -708,10 +759,10 @@ void drawHexTiles() {
 				int max = (int) fminf(exponent, 6);
 				for (int i = 0; i < max; i++) {
 
-					Vector2 insetCorner = hexagonCorner(px, tileSize-25, i);
+					Vector2 insetCorner = hexagonCorner(px, tileSize-25, i, 0);
 
 
-					Vector2 insetCorner2 = hexagonCorner(px, tileSize-25, i+1);
+					Vector2 insetCorner2 = hexagonCorner(px, tileSize-25, i+1, 0);
 
 					Vector2 point1 = Vector2Lerp(insetCorner, insetCorner2, 0.25);
 					Vector2 point2 = Vector2Lerp(insetCorner, insetCorner2, 0.75);
@@ -723,7 +774,7 @@ void drawHexTiles() {
 		}
 	}
 
-	// draw new tile
+	// draw new tile fade-in
 	{
 		Vector2 px = hexToVec2(newTile, tileSize);
 		px.x += (hexHorizDiff(tileSize) / 2);
@@ -737,13 +788,13 @@ void drawHexTiles() {
 
 		drawHexagon(px, tileSize-25 ,ColorAlpha(ORANGE ,alpha), clrDarkGreen );
 	}
+
+
 }
 
 
 
 
-int clickCount = 0;
-char fmtBuff [512] = {0};
 void gameDraw() {
 	BeginTextureMode(gameRenderTexture);
 	{
@@ -751,8 +802,6 @@ void gameDraw() {
 
 		drawClickables();
 		drawHexTiles();
-		sprintf(fmtBuff, "%i", clickCount);
-		DrawText(fmtBuff, 1, 1, 40, RED);
 
 
 	}
@@ -794,7 +843,6 @@ void tickClickables () {
 			if (isButtonHovered) {
 				clickables[i].tickCooldownCurrent = 0;
 				moveHexagons(clickables[i].direction);
-				clickCount += 1;
 			}
 		}
 	}
@@ -806,6 +854,18 @@ void tickClickables () {
 			clickables[i].tickCooldownCurrent += frameMilis;
 		}
 	}
+
+}
+
+void tickControls() {
+	/*
+	 *
+	* we (NW NE)
+		ad (W E)
+		yx (SW SE)
+	 *
+	 */
+	// moveHexagons(clickables[i].direction);
 
 }
 
