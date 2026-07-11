@@ -19,6 +19,8 @@ void gameUpdate();
 
 void spawnRandomHexTile();
 
+void drawTextCentred(Vector2 centrePoint, Font font, const char* str, float textSize, Color color);
+
 typedef enum {
     CLICK_MOVE_NW,
     CLICK_MOVE_E,

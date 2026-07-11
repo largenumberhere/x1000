@@ -76,6 +76,14 @@ void drawHexagonR(Vector2 centrePoint, float size, Color color1, Color color2, f
 	drawHexagonOutline(centrePoint, size, color2, roation);
 }
 
+void drawHexagonB(Vector2 centrePoint, float size, Color color1) {
+	for (int i = 1; i < 6 + 1; i++) {
+		Vector2 leftPoint = hexagonCorner(centrePoint, size, i -1, 0);
+		Vector2 rightPoint = hexagonCorner(centrePoint, size, i, 0);
+
+		DrawTriangle(centrePoint, rightPoint, leftPoint, color1);
+	}
+}
 
 
 void fmtHex(char* medBuffer, float value) {
@@ -86,18 +94,6 @@ void fmtHex(char* medBuffer, float value) {
 	sprintf(medBuffer+1, "%02x", rhs);
 }
 
-void drawTextCentred(Vector2 centrePoint, Font font, const char* str, float textSize, Color color) {
-	float spcaing = 0;
-
-	Vector2 size = MeasureTextEx(font, str, textSize, spcaing);
-
-	Vector2 two = {2,  2};
-	Vector2 middle = Vector2Divide(size, two);
-
-	Vector2 position = {centrePoint.x - middle.x, centrePoint.y - middle.y};
-
-	DrawTextPro(GetFontDefault(), str, position, Vector2Zero(), 0, textSize, spcaing, color);
-}
 
 
 // note: vertical and horizontal heights differ
@@ -124,14 +120,15 @@ void drawTextCentred(Vector2 centrePoint, Font font, const char* str, float text
 void drawHexTiles() {
 
 	AxialHex centreHexAxial = {2, 2};
-	float tileSize = 75;
-	Vector2 tilesOffset = {40 + hexHorizDiff(tileSize) / 2, 200 + hexVerticalDiff(tileSize) / 2};
+	float tileSize = 62;
+	Vector2 tilesOffset = {120 + hexHorizDiff(tileSize) / 2, 250 + hexVerticalDiff(tileSize) / 2};
+
 	Font font = GetFontDefault();
 	// LoadFont()
 
 	// draw bg hexagon
 	{;
-		float bgSize = 400;
+		float bgSize = 320;
 		Vector2 px = hexToVec2(centreHexAxial, tileSize);
 		px = Vector2Add(px, tilesOffset);
 
@@ -265,7 +262,7 @@ void drawHexTiles() {
 
 
 				if ((!isUnusedTile || debugTiles) && !isTileEmpty) {
-					drawTextCentred(px, font,  hexHexBuff, 50, clrOrange);
+					drawTextCentred(px, font,  hexHexBuff, 35, clrOrange);
 				}
 			}
 		}

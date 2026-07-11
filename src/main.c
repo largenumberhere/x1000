@@ -5,9 +5,6 @@
 
 #endif
 
-
-
-
 void webGameUpdate() {
 #ifndef PLATFORM_DESKTOP
 	if (gameTerminateWindowImmediately) {

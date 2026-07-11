@@ -78,6 +78,19 @@ void spawnRandomHexTile() {
 	deltaSinceNewTile = 0;
 }
 
+void drawTextCentred(Vector2 centrePoint, Font font, const char* str, float textSize, Color color) {
+	float spcaing = 0;
+
+	Vector2 size = MeasureTextEx(font, str, textSize, spcaing);
+
+	Vector2 two = {2,  2};
+	Vector2 middle = Vector2Divide(size, two);
+
+	Vector2 position = {centrePoint.x - middle.x, centrePoint.y - middle.y};
+
+	DrawTextPro(GetFontDefault(), str, position, Vector2Zero(), 0, textSize, spcaing, color);
+}
+
 
 
 // --- end of header implementation --- //
@@ -87,6 +100,7 @@ typedef struct {
 	ClickMove direction;
 	float tickCooldownCurrent;
 	float tickCooldownMax;
+	bool hovered;
 } GameClickable;
 
 
@@ -103,25 +117,26 @@ void drawArrow(Vector2 headSpot, float angle, float length) {
 	Vector2 other = {0, length};
 	float radiansFactor = (PI / 180);
 	float radians = angle * radiansFactor;
+	Color color = clrLightGreen;
 
 
 	Vector2 rotated = Vector2Rotate(other, radians);
 	Vector2 b = Vector2Add(headSpot, rotated);
-	DrawLineEx(headSpot, b, thickness, clrOrange);
+	DrawLineEx(headSpot, b, thickness, color);
 
 
 	Vector2 leftWedge = {0, 40};
 	leftWedge = Vector2Rotate(leftWedge, radians);
 	leftWedge = Vector2Rotate(leftWedge , 30*radiansFactor);
 	leftWedge = Vector2Add(headSpot, leftWedge);
-	DrawLineEx(headSpot, leftWedge, thickness, clrOrange);
+	DrawLineEx(headSpot, leftWedge, thickness, color);
 
 	Vector2 rightWedge = {0, 40};
 	rightWedge = Vector2Rotate(rightWedge, radians);
 	rightWedge = Vector2Rotate(rightWedge , -30*radiansFactor);
 	rightWedge = Vector2Add(headSpot, rightWedge);
 
-	DrawLineEx(headSpot, rightWedge, thickness, clrOrange);
+	DrawLineEx(headSpot, rightWedge, thickness, color);
 }
 
 
@@ -149,16 +164,32 @@ static int64_t clickableCount = 0;
 
 
 void initClickables() {
-	GameClickable seArrow = {.direction = CLICK_MOVE_SE, .position = {700, 900, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
-	GameClickable nwArrow = {.direction = CLICK_MOVE_NW, .position = {20, 100, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
-	GameClickable neArrow = {.direction = CLICK_MOVE_E, .position = {20, 200, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
-	GameClickable swArrow = {.direction = CLICK_MOVE_W, .position = {20, 300, 90, 90}, .tickCooldownCurrent = 1000, .tickCooldownMax = 1000};
+	GameClickable defaultClickable = {
+		.direction = CLICK_MOVE_SE,
+		.position = {750, 600, 250, 90},
+		.tickCooldownCurrent = 1000,
+		.tickCooldownMax = 300,
+		.hovered = false
+	};
+
+	GameClickable seArrow = defaultClickable;
+	GameClickable nwArrow = defaultClickable;
+		nwArrow.direction = CLICK_MOVE_NW;
+		nwArrow.position = (Rectangle) {15, 250, 250, 90};
+	GameClickable eArrow = defaultClickable;
+		eArrow.direction = CLICK_MOVE_E;
+		eArrow.position = (Rectangle) {830, 420, 150, 90};
+
+	GameClickable wArrow = defaultClickable;
+		wArrow.direction = CLICK_MOVE_W;
+		wArrow.position = (Rectangle) {20, 420, 150, 90};
 
 	clickables[clickableCount++] = seArrow;
 	clickables[clickableCount++] = nwArrow;
 
-	clickables[clickableCount++] = neArrow;
-	clickables[clickableCount++] = swArrow;
+	clickables[clickableCount++] = eArrow;
+	clickables[clickableCount++] = wArrow;
+
 }
 
 void drawCardinalArrow(ClickMove clickMoveDirection, Vector2 origin, float offsetX, float offsetY) {
@@ -185,37 +216,79 @@ void drawCardinalArrow(ClickMove clickMoveDirection, Vector2 origin, float offse
 
 	Vector2 offset = {offsetX, offsetY};
 	Vector2 pos = Vector2Add(origin, offset);
-	drawArrow(pos, angle, 100);
+	drawArrow(pos, angle, 70);
+}
+
+Rectangle rectangleShrink(Rectangle rectangle, float pixels) {
+	rectangle.x += pixels ;
+	rectangle.y += pixels ;
+	rectangle.width -= pixels * 2;
+	rectangle.height -= pixels * 2;
+
+	return rectangle;
+}
+
+Vector2 rectangleCentre(Rectangle rectangle) {
+	float x = rectangle.width / 2 + rectangle.x;
+	float y = rectangle.height /2 + rectangle.y;
+	Vector2 vec = {x, y};
+
+	return vec;
 }
 
 void drawClickables() {
+	float roundedness = 0.8;
+	int segments = 1;
+
 	for (int i = 0; i < clickableCount; i++) {
+		DrawRectangleRounded(clickables[i].position, roundedness, segments, clrDarkGreen);
+
+		Rectangle r1 = rectangleShrink(clickables[i].position, 4);
+		DrawRectangleRounded(r1, roundedness, segments, clrYellow);
+
+		Rectangle r2 = rectangleShrink(clickables[i].position, 8);
+
 		if (clickables[i].tickCooldownCurrent < clickables[i].tickCooldownMax) {
-			DrawRectangleRec(clickables[i].position, clrYellow);
+			DrawRectangleRounded(r2, roundedness, segments, WHITE);
+			DrawRectangleRounded(r2, roundedness, segments, ColorAlpha(clrDarkGreen, 0.8));
+
+		} else if (clickables[i].hovered) {
+			DrawRectangleRounded(r2, roundedness, segments, clrYellow);
 		} else {
-			DrawRectangleRec(clickables[i].position, clrDarkGreen);
+			DrawRectangleRounded(r2, roundedness, segments, clrDarkGreen);
 		}
+
+
+
+
 
 		int size = 80;
 		Vector2 pos = { clickables[i].position.x, clickables[i].position.y};
 
+		Rectangle textSubRec = clickables[i].position;
+		textSubRec.width -= 60;
+
+		Color color = clrOrange;
 		switch (clickables[i].direction) {
 			case CLICK_MOVE_SE:
-				DrawText("SE", pos.x, pos.y, size, WHITE);
+				drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "SE", size, color);
 				drawCardinalArrow(clickables[i].direction, pos, 170, 70);
+
 				break;
 			case CLICK_MOVE_NW:
-				DrawText("NW", pos.x, pos.y, size, WHITE);
-				drawCardinalArrow(clickables[i].direction, pos, 100, 20);
+				drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "NW", size, color);
+				drawCardinalArrow(clickables[i].direction, pos, 160, 20);
 
 				break;
 			case CLICK_MOVE_E:
-				DrawText("E", pos.x, pos.y, size, WHITE);
-				drawCardinalArrow(clickables[i].direction, pos, 200, 50);
+				drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "E", size, color);
+				drawCardinalArrow(clickables[i].direction, pos, 137, 45);
+
 				break;
 			case CLICK_MOVE_W:
-				DrawText("W", pos.x, pos.y, size, WHITE);
-				drawCardinalArrow(clickables[i].direction, pos, 100, 50);
+				drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "W", size, color);
+				drawCardinalArrow(clickables[i].direction, pos, 80, 45);
+
 				break;
 			default: GAME_ASSERT(false);
 		}
@@ -266,11 +339,37 @@ void gamePreInit3() {
 	}
 }
 
-
+float frameAccum = 0;
 void gameDraw() {
+	frameAccum += GetFrameTime();
 	BeginTextureMode(gameRenderTexture);
 	{
-		ClearBackground(RAYWHITE);
+
+		ClearBackground(WHITE);
+
+		{
+			// draw bg 'clouds'
+			Vector2 tileOffset = {-8000, -9000};
+			Vector2 reallyFarAway = {2000, 900};
+			tileOffset = Vector2Lerp(tileOffset, reallyFarAway, fmodf(frameAccum / 500, 0.5));
+			float tileSize = 200;
+			for (int r = 0; r < 100; r++) {
+				for (int q = 0; q < 100; q++) {
+					AxialHex hexUnit = {q, r};
+					Vector2 px = hexToVec2(hexUnit, tileSize);
+					px = Vector2Add(px, tileOffset);
+
+
+					if ((r * q) % 2 == 0) {
+						Color color = ColorAlpha(clrLightGreen, 0.4);
+						drawHexagonB(px, tileSize, color);
+					} else {
+						Color color = ColorAlpha(clrDarkGreen, 0.4);
+						drawHexagonB(px, tileSize, color);
+					}
+				}
+			}
+		}
 
 		drawClickables();
 		drawHexTiles();
@@ -310,11 +409,15 @@ void tickClickables () {
 
 	for (int i = 0; i < clickableCount; i++) {
 		bool isButtonHovered = CheckCollisionPointRec(mouse, clickables[i].position);
-		if (wasLeftclickPressed && clickables[i].tickCooldownCurrent) {
-			if (isButtonHovered) {
-				clickables[i].tickCooldownCurrent = 0;
-				moveHexagons(clickables[i].direction);
-			}
+		if (isButtonHovered) {
+			clickables[i].hovered = true;
+		} else {
+			clickables[i].hovered = false;
+		}
+
+		if (isButtonHovered && wasLeftclickPressed && clickables[i].tickCooldownCurrent) {
+			clickables[i].tickCooldownCurrent = 0;
+			moveHexagons(clickables[i].direction);
 		}
 	}
 
@@ -345,6 +448,7 @@ float tSinceLastSpawn = 0;
 void gameTick() {
 	tickClickables();
 	deltaSinceNewTile += GetFrameTime();
+	tickControls();
 }
 
 
