@@ -37,7 +37,12 @@ add_executable(${PROJECT_NAME}
         src/game_error.c
         include/get_mouse_pos_rel.h
         src/get_mouse_pos_rel.c
-        src/hexagons.h
+        include/hexagons.h
+        include/move_hexagons.h
+        src/move_hexagons.c
+        src/draw_hex_tiles.c
+        src/hexagons.c
+
 )
 
 target_link_libraries(${PROJECT_NAME} raylib)
