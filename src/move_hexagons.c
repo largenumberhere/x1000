@@ -5,7 +5,14 @@
 #include "../include/game.h"
 #include "../include/game_error.h"
 
+bool tileRecentlyMerged = false;
+
+
 void moveHexagons(ClickMove direction) {
+	tileRecentlyMerged = false;
+	bool tileMerged[MAX_Q][MAX_R] = {0};
+
+
 	if (direction == CLICK_MOVE_SE) {
 		// hacky compactions
 		for (int i = 0; i < fmax(MAX_Q, MAX_R); i++) {
@@ -24,7 +31,6 @@ void moveHexagons(ClickMove direction) {
 			}
 		}
 
-		bool tileMerged[MAX_Q][MAX_R] = {0};
 		// merge neighbours
 		for (int q = 0; q < MAX_Q; q++) {
 			for (int r = 0; r < MAX_R - 1; r++) {
@@ -84,7 +90,6 @@ void moveHexagons(ClickMove direction) {
 		}
 
 
-		bool tileMerged[MAX_Q][MAX_R] = {0};
 		// merge neighbours
 		for (int q = 0; q < MAX_Q; q++) {
 			for (int r = 0; r < MAX_R - 1; r++) {
@@ -144,7 +149,6 @@ void moveHexagons(ClickMove direction) {
 			}
 		}
 
-		bool tileMerged[MAX_Q][MAX_R] = {0};
 		// merge neighbours
 		for (int r = 0; r < MAX_R - 1; r++) {
 			for (int q = 0; q < MAX_Q -1; q++) {
@@ -203,7 +207,6 @@ void moveHexagons(ClickMove direction) {
 		}
 
 		// merge neighbours
-		bool tileMerged[MAX_Q][MAX_R] = {0};
 		for (int r = 0; r < MAX_R - 1; r++) {
 			for (int q = 0; q < MAX_Q -1; q++) {
 				// move all r+1 to r when r is empty and r+1 is occupied
@@ -226,11 +229,20 @@ void moveHexagons(ClickMove direction) {
 		}
 
 
-
-
 	} else {
 		GAME_ASSERT(false);
 	}
+
+	// notify of one or more tile merges
+	for (int q = 0; q < MAX_Q; q++) {
+		for (int r = 0; r < MAX_R; r++) {
+			if (tileMerged[q][r]) {
+				tileRecentlyMerged = true;
+			}
+		}
+	}
+
+
 
 	spawnRandomHexTile();
 }

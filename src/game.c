@@ -43,10 +43,11 @@ float deltaSinceNewTile = 0;
 
 
 bool gameTerminateWindowImmediately = false;
-const char* gameVersion = "0.3";
+const char* gameVersion = "0.4";
 
 
 bool canSpawnTile();	// fwd declaration of local symbol
+
 
 void spawnRandomHexTile() {
 	if (!canSpawnTile()) {
@@ -94,6 +95,27 @@ void drawTextCentred(Vector2 centrePoint, Font font, const char* str, float text
 
 
 // --- end of header implementation --- //
+
+
+bool gameEnded = false;
+
+bool checkGameOver() {
+	// notify if no spaces are left
+	int emptyCount = 0;
+	for (int q = 0; q < MAX_Q; q++) {
+		for (int r = 0; r < MAX_R; r++) {
+			if (hexTiles.hex[q][r] == TILE_EMPTY) {
+				emptyCount += 1;
+			}
+		}
+	}
+
+	if (emptyCount == 0) {
+		return true;
+	}
+
+	return false;
+}
 
 typedef struct {
 	Rectangle position;
@@ -272,7 +294,7 @@ void drawClickables() {
 		switch (clickables[i].direction) {
 			case CLICK_MOVE_SE:
 				drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "SE", size, color);
-				drawCardinalArrow(clickables[i].direction, pos, 170, 70);
+				drawCardinalArrow(clickables[i].direction, pos, 200, 70);
 
 				break;
 			case CLICK_MOVE_NW:
@@ -329,6 +351,9 @@ void gamePreInit2() {
 	InitWindow(gameDestinationScreenSize.width, gameDestinationScreenSize.height, "game");
 }
 
+
+Sound popSound = {0};
+Music backgroundMusic = {0};
 void gamePreInit3() {
 	// load any resources that depend on raylib
 	loadGameRenderTexture();
@@ -337,8 +362,19 @@ void gamePreInit3() {
 	for (int i = 0; i < 2; i++) {
 		spawnRandomHexTile();
 	}
+	InitAudioDevice();
+	while (!IsAudioDeviceReady()) {}
+
+	popSound = LoadSound(ASSET_PATH "/pop5b.mp3");
+	SetSoundVolume(popSound, 0.2);
+
+
+	backgroundMusic = LoadMusicStream(ASSET_PATH "/amurich-amurich-substance-without-shape-353916.mp3");
+	SetMusicVolume(backgroundMusic, 0.2);
+	PlayMusicStream(backgroundMusic);
 }
 
+float endFadeInAccum = 0;
 float frameAccum = 0;
 void gameDraw() {
 	frameAccum += GetFrameTime();
@@ -374,6 +410,55 @@ void gameDraw() {
 		drawClickables();
 		drawHexTiles();
 
+		// draw the score
+		float score = 0;
+		for (int q = 0; q < MAX_Q; q++) {
+			for (int r = 0; r < MAX_R; r++) {
+				float value = hexTiles.hex[q][r];
+				value = value < 0 ? 0 : value;
+				score += value;
+			}
+		}
+		char buff[128] = {0};
+		sprintf(buff, "Score: 0x% 5.0X0", (int)score);
+		Rectangle scoreBgBox = {70, 825, 870, 140};
+		DrawRectangleRec(rectangleShrink(scoreBgBox, -4), clrDarkGreen);
+		DrawRectangleRec(scoreBgBox, clrYellow);
+		DrawRectangleRec(rectangleShrink(scoreBgBox, 4), clrDarkGreen);
+
+		DrawText(buff, 160, 850, 100, clrOrange);
+
+
+		// if (gameEnded) {
+			endFadeInAccum += GetFrameTime();
+			float alpha = Lerp(0, 1, endFadeInAccum / 2);
+			Rectangle rect = rectangleShrink((Rectangle) {0, 0, 1000, 1000}, 150);
+
+			DrawRectangleRec(rectangleShrink(rect, -4), ColorAlpha(clrDarkGreen, alpha));
+			DrawRectangleRec(rect, ColorAlpha(clrYellow, alpha));
+			DrawRectangleRec(rectangleShrink(rect, 4), ColorAlpha(clrDarkGreen, alpha));
+		Rectangle r1 = rect;
+		r1.y -= 500;
+		r1.height += 500;
+
+		drawTextCentred(rectangleCentre(r1), GetFontDefault(), "Hexing isn't it?", 85, ColorAlpha(clrYellow, alpha));
+		Rectangle r2 = r1;
+		r2.height -= 200;
+		r2.y += 200;
+		drawTextCentred(rectangleCentre(r2), GetFontDefault(), "The game is ended now...", 65, ColorAlpha(clrOrange, alpha));
+
+		Rectangle r3 = r2;
+		r3.height -= 300;
+		r3.y += 300;
+
+		drawTextCentred(rectangleCentre(r3), GetFontDefault(), "You have won, but you\n always were going to\n weren't you?", 65, ColorAlpha(clrOrange, alpha));
+
+		Rectangle r4 = r3;
+		r4.height -= 400;
+		r4.y += 400;
+		drawTextCentred(rectangleCentre(r4), GetFontDefault(), "Go outside and feel\nthe wind in your hair.", 65, ColorAlpha(clrOrange, alpha));
+
+		// }
 	}
 	EndTextureMode();
 
@@ -443,12 +528,24 @@ void tickControls() {
 
 }
 
+void tickAudio() {
+	if (tileRecentlyMerged) {
+		tileRecentlyMerged = false;
+		PlaySound(popSound);
+	}
+
+	UpdateMusicStream(backgroundMusic);
+}
 
 float tSinceLastSpawn = 0;
 void gameTick() {
 	tickClickables();
 	deltaSinceNewTile += GetFrameTime();
 	tickControls();
+	tickAudio();
+	gameEnded = checkGameOver();
+
+
 }
 
 
