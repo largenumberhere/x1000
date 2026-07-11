@@ -78,20 +78,67 @@ void drawHexagonR(Vector2 centrePoint, float size, Color color1, Color color2, f
 
 
 
+void fmtHex(char* medBuffer, float value) {
+	int v = (int) value;
+	int rhs = v % 0x100;
+	int lhs = (v - rhs) / 0x100;
+	sprintf(medBuffer, "x\n");
+	sprintf(medBuffer+1, "%02x", rhs);
+}
+
+void drawTextCentred(Vector2 centrePoint, Font font, const char* str, float textSize, Color color) {
+	float spcaing = 0;
+
+	Vector2 size = MeasureTextEx(font, str, textSize, spcaing);
+
+	Vector2 two = {2,  2};
+	Vector2 middle = Vector2Divide(size, two);
+
+	Vector2 position = {centrePoint.x - middle.x, centrePoint.y - middle.y};
+
+	DrawTextPro(GetFontDefault(), str, position, Vector2Zero(), 0, textSize, spcaing, color);
+}
+
+
+// note: vertical and horizontal heights differ
+// // flat-topped hexagon
+// Vector2 hexCentreToStartPty(Vector2 pos, float size) {
+// 	pos.x -= size;
+// 	pos.y -= size;
+//
+// 	return  pos;
+// }
+//
+// // pointy-topped hexagon
+// Vector2 hexCentreToStartFlt(Vector2 pos, float size) {
+// 	float width = sqrtf(3) * size;
+// 	float half = width /2;
+//
+// 	pos.x -= half;
+// 	pos.y -= half;
+//
+// 	return  pos;
+// }
+
+
 void drawHexTiles() {
+
+	AxialHex centreHexAxial = {2, 2};
+	float tileSize = 75;
+	Vector2 tilesOffset = {40 + hexHorizDiff(tileSize) / 2, 200 + hexVerticalDiff(tileSize) / 2};
+	Font font = GetFontDefault();
+	// LoadFont()
+
 	// draw bg hexagon
 	{;
-		float size = 400;
-		Vector2 px = {gameRenderTextureSize.width / 2, gameDestinationScreenSize.height / 2};
-		px.y += 100;
+		float bgSize = 400;
+		Vector2 px = hexToVec2(centreHexAxial, tileSize);
+		px = Vector2Add(px, tilesOffset);
 
+		drawHexagonR(px, bgSize, clrYellow, clrDarkGreen, 30);
+		drawHexagonR(px, bgSize -10, clrDarkGreen, clrDarkGreen, 30);
 
-		drawHexagonR(px, size, clrYellow, clrDarkGreen, 30);
-		drawHexagonR(px, size -10, clrDarkGreen, clrDarkGreen, 30);
 	}
-
-	Vector2 tilesInset = {40, 200};
-	float tileSize = 75;
 
 
 	// draw plain grid
@@ -101,15 +148,7 @@ void drawHexTiles() {
 			bool isUnusedTile = hexTiles.hex[q][r] == TILE_UNUSED;
 
 			Vector2 px = hexToVec2(hexUnit, tileSize);
-
-			// centre the hex of hexes according to the normal display characteristics of a single hexagon.
-			// this is not very precise and doesn't take into account the non-horizontal layout but it's nice
-			px.x += (hexHorizDiff(tileSize) / 2);
-			px.y += (hexVerticalDiff(tileSize) / 2);
-
-			px.x += tilesInset.x; // offset from the top left
-			px.y += tilesInset.y;
-
+			px = Vector2Add(px, tilesOffset);
 
 			if (!isUnusedTile) {
 				drawHexagon(px, tileSize, clrLightGreen, BLACK);
@@ -123,19 +162,13 @@ void drawHexTiles() {
 
 
 
-
-
-	AxialHex centre = {2, 2};
 	{
 		// draw centre tile
-		Vector2 px = hexToVec2(centre, tileSize);
-		px.x += tilesInset.x; // offset from the top left
-		px.y += tilesInset.y;
-
-		px.x += (hexHorizDiff(tileSize) / 2);
-		px.y += (hexVerticalDiff(tileSize) / 2);
+		Vector2 px = hexToVec2(centreHexAxial, tileSize);
+		px = Vector2Add(px, tilesOffset);
 		drawHexagon(px, tileSize, clrYellow, BLACK);
 	}
+
 
 	// draw tiles with non-zero value
 	for (int r = 0; r < MAX_R; r++) {
@@ -147,18 +180,11 @@ void drawHexTiles() {
 
 			Vector2 px = hexToVec2(hexUnit, tileSize);
 
-			// centre the hex of hexes according to the normal display characteristics of a single hexagon.
-			// this is not very precise and doesn't take into account the non-horizontal layout but it's nice
-			px.x += (hexHorizDiff(tileSize) / 2);
-			px.y += (hexVerticalDiff(tileSize) / 2);
-
-			px.x += tilesInset.x; // offset from the top left
-			px.y += tilesInset.y;
-
-
+			px = Vector2Add(px, tilesOffset);
 			drawHexagon(px, tileSize - 20, clrDarkGreen, clrOrange);
 		}
 	}
+
 
 	{
 		// draw dots in centres
@@ -167,18 +193,14 @@ void drawHexTiles() {
 				AxialHex hexUnit = {q, r};
 
 				Vector2 px = hexToVec2(hexUnit, tileSize);
-				px.x += (hexHorizDiff(tileSize) / 2);
-				px.y += (hexVerticalDiff(tileSize) / 2);
-
-				px.x += tilesInset.x; // offset from the top left
-				px.y += tilesInset.y;
-
+				px = Vector2Add(px, tilesOffset);
 
 				bool isUnusedTile = hexTiles.hex[q][r] == TILE_UNUSED;
+				bool isEmptyTile = hexTiles.hex[q][r] == TILE_EMPTY;
 
-				if (!isUnusedTile || debugTiles) {
+				if (!isUnusedTile && isEmptyTile || debugTiles) {
 
-					bool isCentreTile = q == centre.q && r == centre.r;
+					bool isCentreTile = q == centreHexAxial.q && r == centreHexAxial.r;
 					Color insideColor = isCentreTile ? clrYellow : clrLightGreen;
 
 					drawHexagon(px, 30, clrDarkGreen, clrDarkGreen);
@@ -188,17 +210,14 @@ void drawHexTiles() {
 		}
 	}
 
+
 	// draw dots on the edges to visually indicate tile magnitude
 	for (int r = 0; r < MAX_R; r++) {
 		for (int q = 0; q < MAX_Q; q++) {
 			AxialHex hexUnit = {q, r};
 
 			Vector2 px = hexToVec2(hexUnit, tileSize);
-			px.x += (hexHorizDiff(tileSize) / 2);
-			px.y += (hexVerticalDiff(tileSize) / 2);
-
-			px.x += tilesInset.x; // offset from the top left
-			px.y += tilesInset.y;
+			px = Vector2Add(px, tilesOffset);
 
 
 			bool isUnusedTile = hexTiles.hex[q][r] == TILE_UNUSED;
@@ -221,11 +240,12 @@ void drawHexTiles() {
 
 
 
-					DrawLineEx(point1, point2, 13, clrOrange);
+					DrawLineEx(point1, point2, 12, clrYellow);
 				}
 			}
 		}
 	}
+
 
 	{
 		char hexHexBuff[16] = {0};
@@ -237,49 +257,29 @@ void drawHexTiles() {
 
 				AxialHex hexUnit = {q, r};
 				Vector2 px = hexToVec2(hexUnit, tileSize);
-
-				// centre the hex of hexes according to the normal display characteristics of a single hexagon.
-				// this is not very precise and doesn't take into account the non-horizontal layout but it's nice
-				px.x += (hexHorizDiff(tileSize) / 2);
-				px.y += (hexVerticalDiff(tileSize) / 2);
-
-				px.x += tilesInset.x; // offset from the top left
-				px.y += tilesInset.y;
+				px = Vector2Add(px, tilesOffset);
 
 
 				float value = hexTiles.hex[q][r];
+				fmtHex(hexHexBuff, value);
 
-				// float to string
-				sprintf(hexHexBuff, "0x%x", (int) value);
-				if (value == -1) {
-					hexHexBuff[0] = '\0';
-					strcat(hexHexBuff, "-0x1");
-				}
-				//
 
 				if ((!isUnusedTile || debugTiles) && !isTileEmpty) {
-					DrawText(hexHexBuff, px.x, px.y, 25, GREEN);
+					drawTextCentred(px, font,  hexHexBuff, 50, clrOrange);
 				}
 			}
 		}
-
-
 	}
+
 
 	// draw new tile fade-in
 	{
 		Vector2 px = hexToVec2(newTile, tileSize);
-		px.x += (hexHorizDiff(tileSize) / 2);
-		px.y += (hexVerticalDiff(tileSize) / 2);
-
-		px.x += tilesInset.x; // offset from the top left
-		px.y += tilesInset.y;
+		px = Vector2Add(px, tilesOffset);
 		float animDurationSecs = 1.0;
 		float ratio = deltaSinceNewTile / animDurationSecs;
 		float alpha = Lerp(1, 0, ratio);
 
-		drawHexagon(px, tileSize-25 ,ColorAlpha(ORANGE ,alpha), clrDarkGreen );
+		drawHexagon(px, tileSize-25 ,ColorAlpha(clrOrange ,alpha), clrDarkGreen );
 	}
-
-
 }
