@@ -429,7 +429,7 @@ void gameDraw() {
 		DrawText(buff, 160, 850, 100, clrOrange);
 
 
-		// if (gameEnded) {
+		if (gameEnded) {
 			endFadeInAccum += GetFrameTime();
 			float alpha = Lerp(0, 1, endFadeInAccum / 2);
 			Rectangle rect = rectangleShrink((Rectangle) {0, 0, 1000, 1000}, 150);
@@ -437,28 +437,27 @@ void gameDraw() {
 			DrawRectangleRec(rectangleShrink(rect, -4), ColorAlpha(clrDarkGreen, alpha));
 			DrawRectangleRec(rect, ColorAlpha(clrYellow, alpha));
 			DrawRectangleRec(rectangleShrink(rect, 4), ColorAlpha(clrDarkGreen, alpha));
-		Rectangle r1 = rect;
-		r1.y -= 500;
-		r1.height += 500;
+			Rectangle r1 = rect;
+			r1.y -= 500;
+			r1.height += 500;
 
-		drawTextCentred(rectangleCentre(r1), GetFontDefault(), "Hexing isn't it?", 85, ColorAlpha(clrYellow, alpha));
-		Rectangle r2 = r1;
-		r2.height -= 200;
-		r2.y += 200;
-		drawTextCentred(rectangleCentre(r2), GetFontDefault(), "The game is ended now...", 65, ColorAlpha(clrOrange, alpha));
+			drawTextCentred(rectangleCentre(r1), GetFontDefault(), "Hexing isn't it?", 85, ColorAlpha(clrYellow, alpha));
+			Rectangle r2 = r1;
+			r2.height -= 200;
+			r2.y += 200;
+			drawTextCentred(rectangleCentre(r2), GetFontDefault(), "The game is ended now...", 65, ColorAlpha(clrOrange, alpha));
 
-		Rectangle r3 = r2;
-		r3.height -= 300;
-		r3.y += 300;
+			Rectangle r3 = r2;
+			r3.height -= 300;
+			r3.y += 300;
 
-		drawTextCentred(rectangleCentre(r3), GetFontDefault(), "You have won, but you\n always were going to\n weren't you?", 65, ColorAlpha(clrOrange, alpha));
+			drawTextCentred(rectangleCentre(r3), GetFontDefault(), "You have won, but you\n always were going to\n weren't you?", 65, ColorAlpha(clrOrange, alpha));
 
-		Rectangle r4 = r3;
-		r4.height -= 400;
-		r4.y += 400;
-		drawTextCentred(rectangleCentre(r4), GetFontDefault(), "Go outside and feel\nthe wind in your hair.", 65, ColorAlpha(clrOrange, alpha));
-
-		// }
+			Rectangle r4 = r3;
+			r4.height -= 400;
+			r4.y += 400;
+			drawTextCentred(rectangleCentre(r4), GetFontDefault(), "Go outside and feel\nthe wind in your hair.", 65, ColorAlpha(clrOrange, alpha));
+		}
 	}
 	EndTextureMode();
 
