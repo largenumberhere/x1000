@@ -28,15 +28,17 @@ extern AxialHex axialDirectionVectors[6];
 
 extern CubeHex cubeHexDiagonalDirectionalVectors[6];
 
+// the origin is facing down to south, each change moves counter-clockwise
 typedef enum {
-    HEXN_NE =   0,
-    HEXN_N =    1,
-    HEXN_NW =   2,
-    HEXN_SW =   3,
-    HEXN_S =    4,
-    HEXN_SE =   5,
+    // HEXN_S =    0,
+    // HEXN_SE =   1,
+    // HEXN_NE =   2,
+    // HEXN_N =    3,
+    // HEXN_NW =   4,
+    HEXN_SW =   4,
 }  HexDirection;
 
+HexDirection hexDirectionOposite(HexDirection hd);
 
 AxialHex cubeToAxial(CubeHex cubeHex);
 

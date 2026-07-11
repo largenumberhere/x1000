@@ -43,7 +43,7 @@ float deltaSinceNewTile = 0;
 
 
 bool gameTerminateWindowImmediately = false;
-const char* gameVersion = "0.4";
+const char* gameVersion = "1.0";
 
 
 bool canSpawnTile();	// fwd declaration of local symbol
@@ -97,6 +97,7 @@ void drawTextCentred(Vector2 centrePoint, Font font, const char* str, float text
 // --- end of header implementation --- //
 
 
+bool movedHexagonsRecently = false;
 bool gameEnded = false;
 
 bool checkGameOver() {
@@ -206,11 +207,18 @@ void initClickables() {
 		wArrow.direction = CLICK_MOVE_W;
 		wArrow.position = (Rectangle) {20, 420, 150, 90};
 
+	GameClickable arrow5 = defaultClickable;
+	arrow5.direction = CLICK_MOVE_SW;
+	arrow5.position = (Rectangle) {20, 670, 150, 90};
+
+
+
 	clickables[clickableCount++] = seArrow;
 	clickables[clickableCount++] = nwArrow;
 
 	clickables[clickableCount++] = eArrow;
 	clickables[clickableCount++] = wArrow;
+	clickables[clickableCount++] = arrow5;
 
 }
 
@@ -223,7 +231,7 @@ void drawCardinalArrow(ClickMove clickMoveDirection, Vector2 origin, float offse
 		case CLICK_MOVE_E:
 			angle += 90;
 			break;
-		case CLICK_MOVE_NE:
+		case CLICK_MOVE_SW:
 			angle += 45;
 			break;
 		case CLICK_MOVE_SE:
@@ -312,6 +320,13 @@ void drawClickables() {
 				drawCardinalArrow(clickables[i].direction, pos, 80, 45);
 
 				break;
+			case CLICK_MOVE_SW:
+				drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "SW", size, color);
+				drawCardinalArrow(clickables[i].direction, pos, 80, 45);
+
+
+				break;
+
 			default: GAME_ASSERT(false);
 		}
 	}
@@ -353,6 +368,8 @@ void gamePreInit2() {
 
 
 Sound popSound = {0};
+Sound shiftSound = {0};
+Sound bottlePopSound = {0};
 Music backgroundMusic = {0};
 void gamePreInit3() {
 	// load any resources that depend on raylib
@@ -368,10 +385,17 @@ void gamePreInit3() {
 	popSound = LoadSound(ASSET_PATH "/pop5b.mp3");
 	SetSoundVolume(popSound, 0.2);
 
+	shiftSound = LoadSound(ASSET_PATH "/shifting3.mp3");
+	SetSoundVolume(shiftSound, 0.5);
+
+	bottlePopSound = LoadSound(ASSET_PATH "/freesound_community-plastic-bottle-pop-90006.mp3");
+	SetSoundVolume(bottlePopSound, 0.3f);
 
 	backgroundMusic = LoadMusicStream(ASSET_PATH "/amurich-amurich-substance-without-shape-353916.mp3");
 	SetMusicVolume(backgroundMusic, 0.2);
 	PlayMusicStream(backgroundMusic);
+
+
 }
 
 float endFadeInAccum = 0;
@@ -383,7 +407,7 @@ void gameDraw() {
 
 		ClearBackground(WHITE);
 
-		{
+
 			// draw bg 'clouds'
 			Vector2 tileOffset = {-8000, -9000};
 			Vector2 reallyFarAway = {2000, 900};
@@ -405,7 +429,7 @@ void gameDraw() {
 					}
 				}
 			}
-		}
+
 
 		drawClickables();
 		drawHexTiles();
@@ -451,7 +475,7 @@ void gameDraw() {
 			r3.height -= 300;
 			r3.y += 300;
 
-			drawTextCentred(rectangleCentre(r3), GetFontDefault(), "You have won, but you\n always were going to\n weren't you?", 65, ColorAlpha(clrOrange, alpha));
+			drawTextCentred(rectangleCentre(r3), GetFontDefault(), "You have won, but you\n were always going to\n weren't you?", 65, ColorAlpha(clrOrange, alpha));
 
 			Rectangle r4 = r3;
 			r4.height -= 400;
@@ -501,6 +525,7 @@ void tickClickables () {
 
 		if (isButtonHovered && wasLeftclickPressed && clickables[i].tickCooldownCurrent) {
 			clickables[i].tickCooldownCurrent = 0;
+			movedHexagonsRecently = true;
 			moveHexagons(clickables[i].direction);
 		}
 	}
@@ -530,7 +555,21 @@ void tickControls() {
 void tickAudio() {
 	if (tileRecentlyMerged) {
 		tileRecentlyMerged = false;
+		tileRecentlyCompacted = false;
+		movedHexagonsRecently = false;
 		PlaySound(popSound);
+	} else if (tileRecentlyCompacted) {
+		PlaySound(shiftSound);
+		tileRecentlyMerged = false;
+		tileRecentlyCompacted = false;
+		movedHexagonsRecently = false;
+
+	} else if (movedHexagonsRecently) {
+		PlaySound(bottlePopSound);
+		tileRecentlyMerged = false;
+		tileRecentlyCompacted = false;
+		movedHexagonsRecently = false;
+
 	}
 
 	UpdateMusicStream(backgroundMusic);

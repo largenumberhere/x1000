@@ -6,10 +6,12 @@
 #include "../include/game_error.h"
 
 bool tileRecentlyMerged = false;
+bool tileRecentlyCompacted = false;
 
 
 void moveHexagons(ClickMove direction) {
 	tileRecentlyMerged = false;
+	bool recentCompaction = false;
 	bool tileMerged[MAX_Q][MAX_R] = {0};
 
 
@@ -26,6 +28,7 @@ void moveHexagons(ClickMove direction) {
 					if (one >= TILE_MIN_POPULATED && two == TILE_EMPTY) {
 						hexTiles.hex[q][r+1] = one;
 						hexTiles.hex[q][r] = two;
+						recentCompaction = true;
 					}
 				}
 			}
@@ -65,6 +68,7 @@ void moveHexagons(ClickMove direction) {
 					if (one >= TILE_MIN_POPULATED && two == TILE_EMPTY) {
 						hexTiles.hex[q][r+1] = one;
 						hexTiles.hex[q][r] = two;
+						recentCompaction = true;
 					}
 				}
 			}
@@ -84,6 +88,7 @@ void moveHexagons(ClickMove direction) {
 					if (one >= TILE_MIN_POPULATED && two == TILE_EMPTY) {
 						hexTiles.hex[q][r] = one;
 						hexTiles.hex[q][r+1] = two;
+						recentCompaction = true;
 					}
 				}
 			}
@@ -124,6 +129,7 @@ void moveHexagons(ClickMove direction) {
 					if (one >= TILE_MIN_POPULATED && two == TILE_EMPTY) {
 						hexTiles.hex[q][r] = one;
 						hexTiles.hex[q][r+1] = two;
+						recentCompaction = true;
 					}
 				}
 			}
@@ -144,6 +150,7 @@ void moveHexagons(ClickMove direction) {
 					if (one >= TILE_MIN_POPULATED && two == TILE_EMPTY) {
 						hexTiles.hex[q][r] = one;
 						hexTiles.hex[q+1][r] = two;
+						recentCompaction = true;
 					}
 				}
 			}
@@ -183,6 +190,7 @@ void moveHexagons(ClickMove direction) {
 					if (one >= TILE_MIN_POPULATED && two == TILE_EMPTY) {
 						hexTiles.hex[q][r] = one;
 						hexTiles.hex[q+1][r] = two;
+						recentCompaction = true;
 					}
 				}
 			}
@@ -201,6 +209,7 @@ void moveHexagons(ClickMove direction) {
 					if (one >= TILE_MIN_POPULATED && two == TILE_EMPTY) {
 						hexTiles.hex[q+1][r] = one;
 						hexTiles.hex[q][r] = two;
+						recentCompaction = true;
 					}
 				}
 			}
@@ -228,6 +237,106 @@ void moveHexagons(ClickMove direction) {
 			}
 		}
 
+		// hacky compactions
+		for (int i = 0; i < fmaxf(MAX_Q, MAX_R); i++) {
+			for (int r = 0; r < MAX_R; r++) {
+				for (int q = 0; q < MAX_Q - 1; q++) {
+
+					float one = hexTiles.hex[q][r];
+					float two = hexTiles.hex[q+1][r];
+
+					// remove gap
+					if (one >= TILE_MIN_POPULATED && two == TILE_EMPTY) {
+						hexTiles.hex[q+1][r] = one;
+						hexTiles.hex[q][r] = two;
+						recentCompaction = true;
+					}
+				}
+			}
+		}
+
+	} else if (direction == CLICK_MOVE_SW) {
+
+		// hacky compactions
+		for (int i = 0; i < fmaxf(MAX_Q, MAX_R); i++) {
+			for (int r = 0; r < MAX_R; r++) {
+				for (int q = 0; q < MAX_Q; q++) {
+					AxialHex here = {q, r};
+					AxialHex next = axialDirectNeighbour(here,  HEXN_SW, 1);
+					if ((here.q >= MAX_Q || here.r >= MAX_R || here.q < 0 || here.r < 0) ||
+						(next.q >= MAX_Q || next.r >= MAX_R || next.q < 0 || next.r < 0)
+					) {
+						continue;
+					}
+
+					float hereVal = hexTiles.hex[(int)here.q][(int)here.r];
+					float nextVal = hexTiles.hex[(int)next.q][(int)next.r];
+					if (nextVal == TILE_EMPTY && hereVal >= TILE_MIN_POPULATED) {
+						hexTiles.hex[(int)next.q][(int)next.r] = hereVal;
+						hexTiles.hex[(int)here.q][(int)here.r] = TILE_EMPTY;
+						recentCompaction = true;
+					}
+				}
+			}
+		}
+
+		// merge neighbours
+		for (int r = 0; r < MAX_R; r++) {
+			// for (int s = 0; s < MAX_R -1 /*probably fine?*/; s++) {
+			for (int q = 0; q < MAX_Q; q++) {
+
+				// nb: the board is displayed with a skew, so direction values are one different
+				AxialHex here = {q, r};
+				AxialHex next = axialDirectNeighbour(here,  HEXN_SW, 1);
+				if ((here.q >= MAX_Q || here.r >= MAX_R || here.q < 0 || here.r < 0) ||
+					(next.q >= MAX_Q || next.r >= MAX_R || next.q < 0 || next.r < 0)
+				) {
+					continue;
+				}
+
+				// move all r+1 to r when r is empty and r+1 is occupied
+				float one = hexTiles.hex[(int)here.q][(int)here.r];
+				float two = hexTiles.hex[(int)next.q][(int)next.r];
+
+				// remove gap
+				bool isSameNonzeroKind = (two >= TILE_MIN_POPULATED) && two == one;
+				if (isSameNonzeroKind) {
+					if (tileMerged[(int) here.q][(int) here.r] || tileMerged[(int) next.q][(int) next.r]) {
+						continue;
+					}
+
+					tileMerged[(int) here.q][(int) here.r] = true;
+
+					hexTiles.hex[(int) next.q][(int) next.r] = one + one;
+					hexTiles.hex[(int) here.q][(int) here.r] = TILE_EMPTY;
+				}
+			}
+
+		}
+
+		// hacky compactions
+		for (int i = 0; i < fmaxf(MAX_Q, MAX_R); i++) {
+			for (int r = 0; r < MAX_R; r++) {
+				for (int q = 0; q < MAX_Q; q++) {
+					AxialHex here = {q, r};
+					AxialHex next = axialDirectNeighbour(here,  HEXN_SW, 1);
+					if ((here.q >= MAX_Q || here.r >= MAX_R || here.q < 0 || here.r < 0) ||
+						(next.q >= MAX_Q || next.r >= MAX_R || next.q < 0 || next.r < 0)
+					) {
+						continue;
+					}
+
+					float hereVal = hexTiles.hex[(int)here.q][(int)here.r];
+					float nextVal = hexTiles.hex[(int)next.q][(int)next.r];
+					if (nextVal == TILE_EMPTY && hereVal >= TILE_MIN_POPULATED) {
+						hexTiles.hex[(int)next.q][(int)next.r] = hereVal;
+						hexTiles.hex[(int)here.q][(int)here.r] = TILE_EMPTY;
+						recentCompaction = true;
+					}
+				}
+			}
+		}
+
 
 	} else {
 		GAME_ASSERT(false);
@@ -242,7 +351,9 @@ void moveHexagons(ClickMove direction) {
 		}
 	}
 
-
+	if (recentCompaction) {
+		tileRecentlyCompacted = true;
+	}
 
 	spawnRandomHexTile();
 }

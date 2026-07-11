@@ -94,7 +94,8 @@ float axialManhattanDistance(AxialHex axial1, AxialHex axial2) {
 
 AxialHex axialDiagonalNeighbour(AxialHex axial, HexDirection direction, int count) {
     GAME_ASSERT(direction < 6);
-    AxialHex vector = cubeToAxial(cubeHexDiagonalDirectionalVectors[direction]);
+    CubeHex cube = cubeHexDiagonalDirectionalVectors[direction];
+    AxialHex vector = cubeToAxial(cube);
     axial.r += vector.r * (float)count;
     axial.q += vector.q * (float)count;
 
@@ -109,5 +110,11 @@ AxialHex axialDirectNeighbour(AxialHex axial, HexDirection direction, int count)
     axial.q += vector.q * (float)count;
 
     return axial;
+}
+
+
+HexDirection hexDirectionOposite(HexDirection hd) {
+    int directionsCount = 6;
+    return (hd + (directionsCount / 2) ) % directionsCount;
 }
 

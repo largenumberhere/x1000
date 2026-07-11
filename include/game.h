@@ -24,7 +24,7 @@ void drawTextCentred(Vector2 centrePoint, Font font, const char* str, float text
 typedef enum {
     CLICK_MOVE_NW,
     CLICK_MOVE_E,
-    CLICK_MOVE_NE,
+    CLICK_MOVE_SW,
     CLICK_MOVE_SE,
     CLICK_MOVE_W,
 } ClickMove;
