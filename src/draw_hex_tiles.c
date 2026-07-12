@@ -243,6 +243,26 @@ void drawHexTiles() {
 		}
 	}
 
+	{
+		// highlight 0x100 tiles
+		// draw dots on the edges to visually indicate tile magnitude
+		for (int r = 0; r < MAX_R; r++) {
+			for (int q = 0; q < MAX_Q; q++) {
+				AxialHex hexUnit = {q, r};
+
+				Vector2 px = hexToVec2(hexUnit, tileSize);
+				px = Vector2Add(px, tilesOffset);
+
+
+				bool isUnusedTile = hexTiles.hex[q][r] == TILE_UNUSED;
+				bool isBigValueTile = hexTiles.hex[q][r] >= 0x100;
+
+				if (!isUnusedTile && isBigValueTile) {
+					drawHexagon(px, 35, clrYellow, clrLightGreen);
+				}
+			}
+		}
+	}
 
 	{
 		char hexHexBuff[16] = {0};

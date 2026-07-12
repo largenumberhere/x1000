@@ -43,7 +43,7 @@ float deltaSinceNewTile = 0;
 
 
 bool gameTerminateWindowImmediately = false;
-const char* gameVersion = "1.0";
+const char* gameVersion = "1.1";
 
 
 bool canSpawnTile();	// fwd declaration of local symbol
@@ -207,9 +207,9 @@ void initClickables() {
 		wArrow.direction = CLICK_MOVE_W;
 		wArrow.position = (Rectangle) {20, 420, 150, 90};
 
-	GameClickable arrow5 = defaultClickable;
-	arrow5.direction = CLICK_MOVE_SW;
-	arrow5.position = (Rectangle) {20, 670, 150, 90};
+	// GameClickable arrow5 = defaultClickable;
+	// arrow5.direction = CLICK_MOVE_SW;
+	// arrow5.position = (Rectangle) {20, 670, 150, 90};
 
 
 
@@ -218,7 +218,7 @@ void initClickables() {
 
 	clickables[clickableCount++] = eArrow;
 	clickables[clickableCount++] = wArrow;
-	clickables[clickableCount++] = arrow5;
+	// clickables[clickableCount++] = arrow5;
 
 }
 
