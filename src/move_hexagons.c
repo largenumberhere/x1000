@@ -1,21 +1,23 @@
-#include "../include/move_hexagons.h"
 
 #include <math.h>
 
-#include "../include/game.h"
-#include "../include/game_error.h"
+#include "game.h"
+#include "game_error.h"
+#include "clickables.h"
+#include "move_hexagons.h"
+
 
 bool tileRecentlyMerged = false;
 bool tileRecentlyCompacted = false;
 
 
-void moveHexagons(ClickMove direction) {
+void moveHexagons(ClickableDir direction) {
 	tileRecentlyMerged = false;
 	bool recentCompaction = false;
 	bool tileMerged[MAX_Q][MAX_R] = {0};
 
 
-	if (direction == CLICK_MOVE_SE) {
+	if (direction == CLICKABLE_DIR_SE) {
 		// hacky compactions
 		for (int i = 0; i < fmax(MAX_Q, MAX_R); i++) {
 			for (int q = 0; q < MAX_Q; q++) {
@@ -75,7 +77,7 @@ void moveHexagons(ClickMove direction) {
 		}
 
 
-	} else if (direction == CLICK_MOVE_NW) {
+	} else if (direction == CLICKABLE_DIR_NW) {
 		// hacky compactions
 		for (int i = 0; i < fmaxf(MAX_Q, MAX_R); i++) {
 			for (int q = 0; q < MAX_Q; q++) {
@@ -137,7 +139,7 @@ void moveHexagons(ClickMove direction) {
 
 	}
 
-	else if (direction == CLICK_MOVE_W) {
+	else if (direction == CLICKABLE_DIR_W) {
 		// hacky compactions
 		for (int i = 0; i < fmaxf(MAX_Q, MAX_R); i++) {
 			for (int r = 0; r < MAX_R; r++) {
@@ -196,7 +198,7 @@ void moveHexagons(ClickMove direction) {
 			}
 		}
 
-	} else if (direction == CLICK_MOVE_E) {
+	} else if (direction == CLICKABLE_DIR_E) {
 		// hacky compactions
 		for (int i = 0; i < fmaxf(MAX_Q, MAX_R); i++) {
 			for (int r = 0; r < MAX_R; r++) {
@@ -255,7 +257,7 @@ void moveHexagons(ClickMove direction) {
 			}
 		}
 
-	} else if (direction == CLICK_MOVE_SW) {
+	} else if (direction == CLICKABLE_DIR_SW) {
 
 		// hacky compactions
 		for (int i = 0; i < fmaxf(MAX_Q, MAX_R); i++) {

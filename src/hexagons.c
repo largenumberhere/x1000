@@ -1,4 +1,4 @@
-#include "../include/hexagons.h"
+#include "hexagons.h"
 
 AxialHex axialDirectionVectors[6] = {
     {+1, 0},

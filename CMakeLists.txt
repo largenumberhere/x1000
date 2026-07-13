@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-#project(my_game C CXX)
+project(my_game C)
 
 set(CMAKE_C_STANDARD 99)
 #set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -28,22 +28,18 @@ configure_file(
         COPYONLY
 )
 
-add_executable(${PROJECT_NAME}
 
-        src/main.c
-        include/game.h
-        src/game.c
-        include/game_error.h
-        src/game_error.c
-        include/get_mouse_pos_rel.h
-        src/get_mouse_pos_rel.c
-        include/hexagons.h
-        include/move_hexagons.h
-        src/move_hexagons.c
-        src/draw_hex_tiles.c
-        src/hexagons.c
+file(GLOB PROJECT_SRC CONFIGURE_DEPENDS
 
+        "src/*.c"
+        "src/*/*.c"
 )
+
+add_executable(${PROJECT_NAME}
+        ${PROJECT_SRC}
+)
+
+target_include_directories(${PROJECT_NAME} PRIVATE include)
 
 target_link_libraries(${PROJECT_NAME} raylib)
 

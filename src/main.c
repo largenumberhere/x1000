@@ -1,5 +1,5 @@
 #include "raylib.h"
-#include "../include/game.h"
+#include "game.h"
 #ifdef PLATFORM_WEB
 	#include "emscripten/emscripten.h"
 

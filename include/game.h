@@ -21,13 +21,7 @@ void spawnRandomHexTile();
 
 void drawTextCentred(Vector2 centrePoint, Font font, const char* str, float textSize, Color color);
 
-typedef enum {
-    CLICK_MOVE_NW,
-    CLICK_MOVE_E,
-    CLICK_MOVE_SW,
-    CLICK_MOVE_SE,
-    CLICK_MOVE_W,
-} ClickMove;
+
 
 // tile grid sizes
 #define  MAX_Q 5
@@ -40,6 +34,11 @@ typedef struct {
 } HexTilesQr;
 
 extern HexTilesQr hexTiles;
+
+bool hexTileInRange(AxialHex axial);
+bool hexTileUseable(AxialHex axial);
+float hexTileGet(AxialHex axial);
+void hexTileSet(AxialHex axial, float value);
 
 const extern float TILE_UNUSED;	// hidden corner
 const extern float TILE_EMPTY;
@@ -55,5 +54,5 @@ extern bool debugTiles;
 
 
 extern AxialHex newTile;
-extern AxialHex prevNewTile;
 extern float deltaSinceNewTile;
+extern bool movedHexagonsRecently;

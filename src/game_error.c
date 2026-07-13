@@ -1,8 +1,8 @@
-#include "../include/game_error.h"
+#include "game_error.h"
 #include <stdbool.h>
 #include <raylib.h>
 #include <stdio.h>
-#include "../include/game.h"
+#include "game.h"
 
 
 void assertFail(const char* file, int line) {
