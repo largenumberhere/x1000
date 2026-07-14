@@ -6,17 +6,136 @@
 #include "clickables.h"
 #include "move_hexagons.h"
 
+#include "stdio.h"
+
 
 bool tileRecentlyMerged = false;
 bool tileRecentlyCompacted = false;
 
-HexDirection opositeDirection(HexDirection dir) {
+
+// Cartesian here is somewhat of a misnomer. It just means that the origin is 0,0 and negative numbers are allowed.
+// Array coordinates always start at zero and do not reflect the way the grid is displayed.
+AxialHex axialArrayToCartesian(AxialHex axial) {
+	GAME_ASSERT(axial.q >= 0);
+	GAME_ASSERT(axial.r >= 0);
+	GAME_ASSERT(axial.q <= 4);
+	GAME_ASSERT(axial.r <= 4);
+
+	AxialHex axial2 = axialHexAdd(axial, (AxialHex){-2, -2});
+
+	GAME_ASSERT(axial2.q >= -2);
+	GAME_ASSERT(axial2.r >= -2);
+	GAME_ASSERT(axial2.q <= 2);
+	GAME_ASSERT(axial2.r <= 2);
+
+	return axial2;
+}
+
+AxialHex axialCartesianToArray(AxialHex axial) {
+	GAME_ASSERT(axial.q >= -2);
+	GAME_ASSERT(axial.r >= -2);
+	GAME_ASSERT(axial.q <= 2);
+	GAME_ASSERT(axial.r <= 2);
+
+	AxialHex axial2 = axialHexAdd(axial, (AxialHex){2, 2});
+
+	GAME_ASSERT(axial2.q >= 0);
+	GAME_ASSERT(axial2.r >= 0);
+	GAME_ASSERT(axial2.q <= 4);
+	GAME_ASSERT(axial2.r <= 4);
+	return axial2;
+}
+
+
+bool cartesianInBounds(AxialHex axial) {
+	return axialManhattanDistance((AxialHex){0,0}, axial) <= 2;
+}
+
+// pos2 is the furthest of the two from the iteration's start
+void visitPairCart(AxialHex pos1Cart, AxialHex pos2Cart) {
+	GAME_ASSERT(cartesianInBounds(pos1Cart));
+	GAME_ASSERT(cartesianInBounds(pos2Cart));
+
+	AxialHex pos1 = axialCartesianToArray(pos1Cart);
+	AxialHex pos2 = axialCartesianToArray(pos2Cart);
+
+	if (!hexTileUseable(pos1) || !hexTileUseable(pos2)) {
+		return;
+	}
+
+
+	if (hexTileUseable(pos1) && hexTileUseable(pos2)) {
+		float one = hexTileGet(pos1);
+		float two = hexTileGet(pos2);
+
+		// merge
+		if (one == two && two != TILE_EMPTY) {
+			hexTileSet(pos1, TILE_EMPTY);
+			hexTileSet(pos2, one * 2);
+		}
+
+		// compact
+		one = hexTileGet(pos1);
+		two = hexTileGet(pos2);
+		if (one >= TILE_MIN_POPULATED && two == TILE_EMPTY) {
+			hexTileSet(pos1, TILE_EMPTY);
+			hexTileSet(pos2, one);
+		}
+
+	}
+}
+
+
+void walkLine(AxialHex pos, LibHexDirection iterDirection) {
+	AxialHex nextPos = axialDirectNeighbour(pos, iterDirection, 1);
+	while (cartesianInBounds(pos) && cartesianInBounds(nextPos)) {
+		visitPairCart(pos, nextPos);
+
+		pos = nextPos;
+		nextPos = axialDirectNeighbour(nextPos, iterDirection, 1) ;
+	}
 
 }
 
-void move2(HexDirection dir) {
+void walkFromEdge(AxialHex pos, LibHexDirection edgeWalkDirection, LibHexDirection innerDirection) {
+	if (innerDirection == HEXN_E) {
+		printf("east\n");
+	}
 
+	while (cartesianInBounds(pos)) {
+		walkLine(pos, innerDirection);
+
+		pos = axialDirectNeighbour(pos, edgeWalkDirection, 1);
+	}
 }
+
+
+void move2(ClickableKind clickableKind) {
+	LibHexDirection dir =  clickableToHexDir(clickableKind);
+	if (dir == HEXN_E) {
+		printf("east2!\n");
+	}
+
+	LibHexDirection left = hexDirCClockwise(dir, 1);
+	LibHexDirection right = hexdirClockwise(dir, 1);
+
+	AxialHex pos = {0, 0};
+	AxialHex leftCorner = axialDirectNeighbour(pos, left, 2);
+	AxialHex middleCorner = axialDirectNeighbour(pos, dir ,2);
+	AxialHex rightCorner = axialDirectNeighbour(pos, right, 2);
+
+
+	LibHexDirection leftEdgeDirection = hexDirCClockwise(left, 2);
+	LibHexDirection rightEdgeDirection = hexdirClockwise(right, 2);
+
+	LibHexDirection innerDir = dir;
+
+	for (int i = 0; i < 4; i++) {
+		walkFromEdge(leftCorner, leftEdgeDirection, innerDir);
+		walkFromEdge(rightCorner, rightEdgeDirection, innerDir);
+	}
+}
+
 
 
 bool compactHexagons(AxialHex offset1, AxialHex offset2) {
@@ -50,6 +169,10 @@ bool compactHexagons(AxialHex offset1, AxialHex offset2) {
 }
 
 void moveHexagons(ClickableKind direction) {
+	move2(direction);
+	return;
+
+
 	tileRecentlyMerged = false;
 	bool recentCompaction = false;
 	bool tileMerged[MAX_Q][MAX_R] = {0};

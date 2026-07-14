@@ -6,11 +6,33 @@
 #include "get_mouse_pos_rel.h"
 #include "move_hexagons.h"
 #include "ray_wrap/draw_arrow.h"
+#include "hexagons.h"
 
 #include <stdbool.h>
 
 #include "raymath.h"
 
+
+LibHexDirection clickableToHexDir(ClickableKind kind) {
+    LibHexDirection dir = -1;
+    if (clickableKindHasFlag(kind, CLICKABLE_DIR_NW)) {
+        dir = HEXN_NW;
+    } else if (clickableKindHasFlag(kind, CLICKABLE_DIR_W)) {
+        dir = HEXN_W;
+    } else if (clickableKindHasFlag(kind, CLICKABLE_DIR_SW)) {
+        dir = HEXN_SW;
+    } else if (clickableKindHasFlag(kind, CLICKABLE_DIR_SE)) {
+        dir = HEXN_SE;
+    } else if (clickableKindHasFlag(kind, CLICKABLE_DIR_E)) {
+        dir = HEXN_E;
+    } else if (clickableKindHasFlag(kind, CLICKABLE_DIR_NE)) {
+        dir = HEXN_NE;
+    }
+
+    GAME_ASSERT(dir != -1);
+
+    return dir;
+}
 
 float lmbCooldownGoal = 0.5f;
 float lmbCooldown = 1.0f;

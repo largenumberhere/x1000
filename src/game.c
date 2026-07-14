@@ -68,7 +68,7 @@ RenderTexture2D gameRenderTexture = {0};
 Rectangle gameRenderTextureSize = {.x=0, .y=0,.width= 1000, .height=1000};
 Rectangle gameDestinationScreenSize = {0, 0, 720, 720};
 
-bool debugTiles = true;
+bool debugTiles = false;
 
 AxialHex newTile = {0};
 float deltaSinceNewTile = 0;

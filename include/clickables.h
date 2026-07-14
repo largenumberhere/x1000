@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "raylib.h"
+#include "hexagons.h"
 
 typedef enum {
 
@@ -13,7 +14,7 @@ typedef enum {
     CLICKABLE_DIR_SW =  1 << 2,
     CLICKABLE_DIR_SE =  1 << 3,
     CLICKABLE_DIR_W =   1 << 4,
-    CLICKABLE_DIR_6 =   1 << 5,
+    CLICKABLE_DIR_NE =   1 << 5,
 
     CLICKABLE_MOVE_HEXAGONS = 1 << 6,
     CLICKABLE_HOVER = 1 << 7,
@@ -39,5 +40,8 @@ static int64_t clickableCount = 0;
 
 void initClickables();
 void drawClickables();
+void tickClickables();
 
 bool clickableKindHasFlag(ClickableKind clickable, ClickableKind kind);
+LibHexDirection clickableToHexDir(ClickableKind kind);
+

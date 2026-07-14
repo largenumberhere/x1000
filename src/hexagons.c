@@ -1,12 +1,20 @@
 #include "hexagons.h"
 
 AxialHex axialDirectionVectors[6] = {
-    {+1, 0},
-    {+1, -1},
-    {0, -1},
-    {-1, 0},
-    {-1, +1},
-    {0, +1},
+    // {+1, 0},    // E
+    // {+1, -1},   // NE
+    // {0, -1},    // NW
+    // {-1, 0},    // W
+    // {-1, +1},   // SW
+    // {0, +1},    // SE
+
+    // ai's suggestion
+    {0, +1},    // SE
+    {+1, 0},    // E
+    {+1, -1},   // NE
+    {0, -1},    // NW
+    {-1, 0},    // W
+    {-1, +1},   // SW
 };
 
 CubeHex cubeHexDiagonalDirectionalVectors[6] = {
@@ -92,8 +100,10 @@ float axialManhattanDistance(AxialHex axial1, AxialHex axial2) {
 }
 
 
-AxialHex axialDiagonalNeighbour(AxialHex axial, HexDirection direction, int count) {
+AxialHex axialDiagonalNeighbour(AxialHex axial, LibHexDirection direction, int count) {
     GAME_ASSERT(direction < 6);
+    GAME_ASSERT(direction >= 0);
+
     CubeHex cube = cubeHexDiagonalDirectionalVectors[direction];
     AxialHex vector = cubeToAxial(cube);
     axial.r += vector.r * (float)count;
@@ -103,8 +113,10 @@ AxialHex axialDiagonalNeighbour(AxialHex axial, HexDirection direction, int coun
 }
 
 
-AxialHex axialDirectNeighbour(AxialHex axial, HexDirection direction, int count) {
+AxialHex axialDirectNeighbour(AxialHex axial, LibHexDirection direction, int count) {
     GAME_ASSERT(direction < 6);
+    GAME_ASSERT(direction >= 0);
+
     AxialHex vector = axialDirectionVectors[direction];
     axial.r += vector.r * (float)count;
     axial.q += vector.q * (float)count;
@@ -120,8 +132,21 @@ AxialHex axialHexAdd(AxialHex one, AxialHex two) {
 }
 
 
-HexDirection hexDirectionOposite(HexDirection hd) {
+LibHexDirection hexDirectionOposite(LibHexDirection hd) {
     int directionsCount = 6;
     return (hd + (directionsCount / 2) ) % directionsCount;
 }
 
+LibHexDirection hexDirCClockwise(LibHexDirection dir, int count) {
+    dir = (dir + count) % 6;
+    if (dir < 6) {
+        dir = (abs(dir) + 6) % 6;
+    }
+
+    return dir;
+}
+
+LibHexDirection hexdirClockwise(LibHexDirection dir, int count) {
+    LibHexDirection dir2 = hexDirCClockwise(dir, -count);
+    return dir2;
+}

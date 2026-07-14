@@ -4,6 +4,8 @@
 #include "raylib.h"
 #include "game_error.h"
 
+#include "stdlib.h"
+
 // https://www.redblobgames.com/grids/hexagons/
 
 // Axial hexagon coordinates
@@ -30,15 +32,20 @@ extern CubeHex cubeHexDiagonalDirectionalVectors[6];
 
 // the origin is facing down to south, each change moves counter-clockwise
 typedef enum {
-    // HEXN_S =    0,
-    // HEXN_SE =   1,
-    // HEXN_NE =   2,
-    // HEXN_N =    3,
-    // HEXN_NW =   4,
-    HEXN_SW =   4,
-}  HexDirection;
+    HEXN_SE = 0,
+    HEXN_E = 1,
+    HEXN_NE = 2,
+    HEXN_NW = 3,
+    HEXN_W = 4,
+    HEXN_SW = 5,
 
-HexDirection hexDirectionOposite(HexDirection hd);
+}  LibHexDirection;
+
+
+LibHexDirection hexDirCClockwise(LibHexDirection dir, int count);
+
+LibHexDirection hexdirClockwise(LibHexDirection dir, int count);
+
 
 AxialHex cubeToAxial(CubeHex cubeHex);
 
@@ -56,9 +63,9 @@ AxialHex vec2ToHex(Vector2 vec, float size);
 float axialManhattanDistance(AxialHex axial1, AxialHex axial2);
 
 
-AxialHex axialDiagonalNeighbour(AxialHex axial, HexDirection direction, int count);
+AxialHex axialDiagonalNeighbour(AxialHex axial, LibHexDirection direction, int count);
 
 
-AxialHex axialDirectNeighbour(AxialHex axial, HexDirection direction, int count);
+AxialHex axialDirectNeighbour(AxialHex axial, LibHexDirection direction, int count);
 
 AxialHex axialHexAdd(AxialHex one, AxialHex two);
