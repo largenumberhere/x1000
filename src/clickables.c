@@ -15,30 +15,27 @@
 float lmbCooldownGoal = 0.5f;
 float lmbCooldown = 1.0f;
 
+bool clickableKindHasFlag(ClickableKind clickable, ClickableKind kind) {
+    return  (clickable & kind) == kind;
+}
 
 
 
-
-void drawCardinalArrow(ClickableDir clickMoveDirection, Vector2 origin, float offsetX, float offsetY) {
+void drawCardinalArrow(ClickableKind clickMoveDirection, Vector2 origin, float offsetX, float offsetY) {
     float angle = 180;	// the origin points down for the arrow's implementation;
-    switch (clickMoveDirection) {
-        case CLICKABLE_DIR_NW:
-            angle += 310;
-            break;
-        case CLICKABLE_DIR_E:
-            angle += 90;
-            break;
-        case CLICKABLE_DIR_SW:
-            angle += 45;
-            break;
-        case CLICKABLE_DIR_SE:
-            angle += 135;
-            break;
-        case CLICKABLE_DIR_W:
-            angle += 270;
-            break;
-        default:
-            GAME_ASSERT(false);
+
+    if (clickableKindHasFlag(clickMoveDirection, CLICKABLE_DIR_NW)) {
+        angle += 310;
+    } else if (clickableKindHasFlag(clickMoveDirection, CLICKABLE_DIR_E)) {
+        angle += 90;
+    } else if (clickableKindHasFlag(clickMoveDirection, CLICKABLE_DIR_SW)) {
+        angle += 45;
+    } else if (clickableKindHasFlag(clickMoveDirection, CLICKABLE_DIR_SE)) {
+        angle += 135;
+    } else if (clickableKindHasFlag(clickMoveDirection, CLICKABLE_DIR_W)) {
+        angle += 270;
+    } else {
+        GAME_ASSERT(false);
     }
 
     Vector2 offset = {offsetX, offsetY};
@@ -50,28 +47,31 @@ void drawCardinalArrow(ClickableDir clickMoveDirection, Vector2 origin, float of
 
 void initClickables() {
     GameClickable defaultClickable = {
-        .direction = CLICKABLE_DIR_SE,
+        .kind = CLICKABLE_HOVER | CLICKABLE_MOVE_HEXAGONS,
         .position = {750, 600, 250, 90},
         .tickCooldownCurrent = 1000,
         .tickCooldownMax = 300,
-        .hovered = false
+        .hovered = false,
     };
 
     GameClickable seArrow = defaultClickable;
+    seArrow.kind |= CLICKABLE_DIR_SE;
+
     GameClickable nwArrow = defaultClickable;
-    nwArrow.direction = CLICKABLE_DIR_NW;
+    nwArrow.kind |= CLICKABLE_DIR_NW;
     nwArrow.position = (Rectangle) {15, 250, 250, 90};
     GameClickable eArrow = defaultClickable;
-    eArrow.direction = CLICKABLE_DIR_E;
+    eArrow.kind |= CLICKABLE_DIR_E;
     eArrow.position = (Rectangle) {830, 420, 150, 90};
 
     GameClickable wArrow = defaultClickable;
-    wArrow.direction = CLICKABLE_DIR_W;
+    wArrow.kind |= CLICKABLE_DIR_W;
     wArrow.position = (Rectangle) {20, 420, 150, 90};
 
-    // GameClickable arrow5 = defaultClickable;
-    // arrow5.direction = CLICK_MOVE_SW;
-    // arrow5.position = (Rectangle) {20, 670, 150, 90};
+    GameClickable arrow5 = defaultClickable;
+    arrow5.kind |= CLICKABLE_DIR_SW;
+    arrow5.position = (Rectangle) {20, 670, 150, 90};
+
 
 
 
@@ -80,7 +80,13 @@ void initClickables() {
 
     clickables[clickableCount++] = eArrow;
     clickables[clickableCount++] = wArrow;
-    // clickables[clickableCount++] = arrow5;
+    clickables[clickableCount++] = arrow5;
+
+    GameClickable volPlus = defaultClickable;
+    volPlus.position.x = 50;
+    volPlus.kind ^= CLICKABLE_MOVE_HEXAGONS;
+    volPlus.kind |= CLICKABLE_VOL_PLUS;
+    clickables[clickableCount++] = volPlus;
 
 }
 
@@ -90,23 +96,25 @@ void drawClickables() {
     int segments = 1;
 
     for (int i = 0; i < clickableCount; i++) {
-        DrawRectangleRounded(clickables[i].position, roundedness, segments, clrDarkGreen);
+        int clickablesKind = clickables[i].kind;
+        if (clickableKindHasFlag(clickablesKind, CLICKABLE_HOVER)) {
+            DrawRectangleRounded(clickables[i].position, roundedness, segments, clrDarkGreen);
 
-        Rectangle r1 = rectangleShrink(clickables[i].position, 4);
-        DrawRectangleRounded(r1, roundedness, segments, clrYellow);
+            Rectangle r1 = rectangleShrink(clickables[i].position, 4);
+            DrawRectangleRounded(r1, roundedness, segments, clrYellow);
 
-        Rectangle r2 = rectangleShrink(clickables[i].position, 8);
+            Rectangle r2 = rectangleShrink(clickables[i].position, 8);
 
-        if (clickables[i].tickCooldownCurrent < clickables[i].tickCooldownMax) {
-            DrawRectangleRounded(r2, roundedness, segments, WHITE);
-            DrawRectangleRounded(r2, roundedness, segments, ColorAlpha(clrDarkGreen, 0.8));
+            if (clickables[i].tickCooldownCurrent < clickables[i].tickCooldownMax) {
+                DrawRectangleRounded(r2, roundedness, segments, WHITE);
+                DrawRectangleRounded(r2, roundedness, segments, ColorAlpha(clrDarkGreen, 0.8));
 
-        } else if (clickables[i].hovered) {
-            DrawRectangleRounded(r2, roundedness, segments, clrYellow);
-        } else {
-            DrawRectangleRounded(r2, roundedness, segments, clrDarkGreen);
+            } else if (clickables[i].hovered) {
+                DrawRectangleRounded(r2, roundedness, segments, clrYellow);
+            } else {
+                DrawRectangleRounded(r2, roundedness, segments, clrDarkGreen);
+            }
         }
-
 
         int size = 80;
         Vector2 pos = { clickables[i].position.x, clickables[i].position.y};
@@ -114,36 +122,39 @@ void drawClickables() {
         textSubRec.width -= 60;
 
         Color color = clrOrange;
-        switch (clickables[i].direction) {
-            case CLICKABLE_DIR_SE:
-                drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "SE", size, color);
-                drawCardinalArrow(clickables[i].direction, pos, 200, 70);
-
-                break;
-            case CLICKABLE_DIR_NW:
-                drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "NW", size, color);
-                drawCardinalArrow(clickables[i].direction, pos, 160, 20);
-
-                break;
-            case CLICKABLE_DIR_E:
-                drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "E", size, color);
-                drawCardinalArrow(clickables[i].direction, pos, 137, 45);
-
-                break;
-            case CLICKABLE_DIR_W:
-                drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "W", size, color);
-                drawCardinalArrow(clickables[i].direction, pos, 80, 45);
-
-                break;
-            case CLICKABLE_DIR_SW:
-                drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "SW", size, color);
-                drawCardinalArrow(clickables[i].direction, pos, 80, 45);
 
 
-                break;
-
-            default: GAME_ASSERT(false);
+        if (clickableKindHasFlag(clickablesKind, CLICKABLE_DIR_SE)) {
+            drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "SE", size, color);
+            drawCardinalArrow(clickables[i].kind, pos, 200, 70);
         }
+
+        else if (clickableKindHasFlag(clickablesKind, CLICKABLE_DIR_E)) {
+            drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "E", size, color);
+            drawCardinalArrow(clickables[i].kind, pos, 137, 45);
+        }
+
+        else if (clickableKindHasFlag(clickablesKind, CLICKABLE_DIR_SW)) {
+            drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "SW", size, color);
+            drawCardinalArrow(clickables[i].kind, pos, 80, 45);
+        }
+
+        else if (clickableKindHasFlag(clickablesKind, CLICKABLE_DIR_W)) {
+            drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "W", size, color);
+            drawCardinalArrow(clickables[i].kind, pos, 80, 45);
+        }
+
+        else if (clickableKindHasFlag(clickablesKind, CLICKABLE_DIR_NW)) {
+            drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "NW", size, color);
+            drawCardinalArrow(clickables[i].kind, pos, 160, 20);
+        } else if (clickableKindHasFlag(clickablesKind, CLICKABLE_VOL_PLUS)) {
+            drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "Vol+", size, color);
+        } else if (clickableKindHasFlag(clickablesKind, CLICKABLE_VOL_MINUS)) {
+            drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "Vol-", size, color);
+        } else {
+            GAME_ASSERT(false);
+        }
+
     }
 
 }
@@ -168,17 +179,38 @@ void tickClickables () {
 
 
     for (int i = 0; i < clickableCount; i++) {
-        bool isButtonHovered = CheckCollisionPointRec(mouse, clickables[i].position);
-        if (isButtonHovered) {
-            clickables[i].hovered = true;
-        } else {
-            clickables[i].hovered = false;
+        // bool isDirectionButton = clickables[i].kind >= CLICKABLE_DIR_FIRST && clickables[i].kind <= CLICKABLE_DIR_LAST;
+        // bool isVolumeButton = clickables[i].kind >= CLICKABLE_VOL_FIST && clickables[i].kind <= CLICKABLE_VOL_LAST;
+
+        bool hoverEffect = clickableKindHasFlag(clickables[i].kind, CLICKABLE_HOVER);
+        bool bMoveHexagons = clickableKindHasFlag(clickables[i].kind, CLICKABLE_MOVE_HEXAGONS);
+
+        if (hoverEffect) {
+            bool isMouseOver = CheckCollisionPointRec(mouse, clickables[i].position);
+            if (isMouseOver) {
+                clickables[i].hovered = true;
+            } else {
+                clickables[i].hovered = false;
+            }
         }
 
-        if (isButtonHovered && wasLeftclickPressed && clickables[i].tickCooldownCurrent) {
-            clickables[i].tickCooldownCurrent = 0;
-            movedHexagonsRecently = true;
-            moveHexagons(clickables[i].direction);
+        if (bMoveHexagons) {
+            bool isMouseOver = CheckCollisionPointRec(mouse, clickables[i].position);
+            if (isMouseOver && wasLeftclickPressed && clickables[i].tickCooldownCurrent) {
+                clickables[i].tickCooldownCurrent = 0;
+
+                movedHexagonsRecently = true;
+                moveHexagons(clickables[i].kind);
+            }
+        }
+
+        if (clickableKindHasFlag(clickables[i].kind, CLICKABLE_VOL_PLUS)) {
+            bool isMouseOver = CheckCollisionPointRec(mouse, clickables[i].position);
+            if (isMouseOver && wasLeftclickPressed && clickables[i].tickCooldownCurrent) {
+                clickables[i].tickCooldownCurrent = 0;
+                gameVolume += 0.1f;
+                updateSoundVolumes();
+            }
         }
     }
 

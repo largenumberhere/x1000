@@ -36,6 +36,7 @@ typedef struct {
 extern HexTilesQr hexTiles;
 
 bool hexTileInRange(AxialHex axial);
+bool hexTileOccupied(AxialHex axial);
 bool hexTileUseable(AxialHex axial);
 float hexTileGet(AxialHex axial);
 void hexTileSet(AxialHex axial, float value);
@@ -56,3 +57,6 @@ extern bool debugTiles;
 extern AxialHex newTile;
 extern float deltaSinceNewTile;
 extern bool movedHexagonsRecently;
+extern float gameVolume;
+
+void updateSoundVolumes();

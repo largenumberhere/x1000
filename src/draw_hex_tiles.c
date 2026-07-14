@@ -67,18 +67,24 @@ void drawHexTiles() {
 	for (int r = 0; r < MAX_R; r++) {
 		for (int q = 0; q < MAX_Q; q++) {
 			AxialHex hexUnit = {q, r};
-			bool isUnusedTile = hexTiles.hex[q][r] == TILE_UNUSED;
+
+			bool isUnusedTile = !hexTileUseable(hexUnit);
 
 			Vector2 px = hexToVec2(hexUnit, tileSize);
 			px = Vector2Add(px, tilesOffset);
 
 			if (!isUnusedTile) {
 				drawHexagon(px, tileSize, clrLightGreen, BLACK);
-			} else {
-				if (debugTiles) {
-					drawHexagon(px, tileSize, ORANGE, BLACK);
-				}
 			}
+				// } else {
+			// if (debugTiles) {
+			//
+			// 	char buff[128] = {0};
+			// 	sprintf(buff, "%.0f,%.0f", hexUnit.q, hexUnit.r);
+			// 	DrawText(buff, px.x, px.y, 40, WHITE);
+			// 	// drawHexagon(px, tileSize, ORANGE, BLACK);
+			// }
+			// }
 		}
 	}
 
@@ -96,7 +102,7 @@ void drawHexTiles() {
 	for (int r = 0; r < MAX_R; r++) {
 		for (int q = 0; q < MAX_Q; q++) {
 			AxialHex hexUnit = {q, r};
-			if (!(hexTiles.hex[q][r] >= 1)) {
+			if (!hexTileOccupied(hexUnit)) {
 				continue;
 			}
 
@@ -117,10 +123,8 @@ void drawHexTiles() {
 				Vector2 px = hexToVec2(hexUnit, tileSize);
 				px = Vector2Add(px, tilesOffset);
 
-				bool isUnusedTile = hexTiles.hex[q][r] == TILE_UNUSED;
-				bool isEmptyTile = hexTiles.hex[q][r] == TILE_EMPTY;
 
-				if (!isUnusedTile && isEmptyTile || debugTiles) {
+				if (hexTileUseable(hexUnit) && !hexTileOccupied(hexUnit) || debugTiles) {
 
 					bool isCentreTile = q == centreHexAxial.q && r == centreHexAxial.r;
 					Color insideColor = isCentreTile ? clrYellow : clrLightGreen;
@@ -141,11 +145,11 @@ void drawHexTiles() {
 			Vector2 px = hexToVec2(hexUnit, tileSize);
 			px = Vector2Add(px, tilesOffset);
 
-
-			bool isUnusedTile = hexTiles.hex[q][r] == TILE_UNUSED;
+			bool isUnusedTile = !hexTileUseable(hexUnit);
 
 			if (!isUnusedTile || debugTiles) {
-				float tileValue = hexTiles.hex[q][r];
+				float tileValue = hexTileGet(hexUnit);
+
 				int exponent =  (int) sqrtf(tileValue);
 				exponent -= 1;
 				exponent = Clamp(exponent, 0, 6);
@@ -179,8 +183,8 @@ void drawHexTiles() {
 				px = Vector2Add(px, tilesOffset);
 
 
-				bool isUnusedTile = hexTiles.hex[q][r] == TILE_UNUSED;
-				bool isBigValueTile = hexTiles.hex[q][r] >= 0x100;
+				bool isUnusedTile = !hexTileUseable(hexUnit);
+				bool isBigValueTile = hexTileGet(hexUnit) >= 0x100;
 
 				if (!isUnusedTile && isBigValueTile) {
 					drawHexagon(px, 35, clrYellow, clrLightGreen);
@@ -194,15 +198,16 @@ void drawHexTiles() {
 		// draw text on hexagons
 		for (int r = 0; r < MAX_R; r++) {
 			for (int q = 0; q < MAX_Q; q++) {
-				bool isTileEmpty = hexTiles.hex[q][r] == TILE_EMPTY;
-				bool isUnusedTile = hexTiles.hex[q][r] == TILE_UNUSED;
-
 				AxialHex hexUnit = {q, r};
+
+				bool isTileEmpty = !hexTileOccupied(hexUnit);
+				bool isUnusedTile = !hexTileUseable(hexUnit);
+
 				Vector2 px = hexToVec2(hexUnit, tileSize);
 				px = Vector2Add(px, tilesOffset);
 
 
-				float value = hexTiles.hex[q][r];
+				float value = hexTileGet(hexUnit);
 				fmtHex(hexHexBuff, value);
 
 
@@ -224,4 +229,28 @@ void drawHexTiles() {
 
 		drawHexagon(px, tileSize-25 ,ColorAlpha(clrOrange ,alpha), clrDarkGreen );
 	}
+
+	{
+		if (debugTiles) {
+
+			char buff[128] = {0};
+			for (int q = 0; q < MAX_Q; q++) {
+				for (int r = 0; r < MAX_R; r++) {
+					AxialHex hexUnit = {q, r};
+					Vector2 px = hexToVec2(hexUnit, tileSize);
+					px = Vector2Add(px, tilesOffset);
+
+					buff[0] = '\0';
+
+					sprintf(buff, "%.0f,%.0f", hexUnit.q, hexUnit.r);
+					DrawText(buff, px.x, px.y, 40, WHITE);
+					// drawHexagon(px, tileSize, ORANGE, BLACK);
+				}
+			}
+		}
+	}
+
+
+	// drawHexagon(hexToVec2((AxialHex){1,1}, tileSize), tileSize, clrYellow, clrYellow);
+
 }

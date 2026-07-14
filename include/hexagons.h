@@ -61,3 +61,4 @@ AxialHex axialDiagonalNeighbour(AxialHex axial, HexDirection direction, int coun
 
 AxialHex axialDirectNeighbour(AxialHex axial, HexDirection direction, int count);
 
+AxialHex axialHexAdd(AxialHex one, AxialHex two);

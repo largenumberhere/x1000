@@ -26,10 +26,16 @@ HexTilesQr hexTiles = {0};
 bool hexTileUseable(AxialHex axial) {
 	return  hexTileInRange(axial) && hexTileGet(axial) >= TILE_EMPTY;
 }
+
+bool hexTileOccupied(AxialHex axial) {
+	return hexTileGet(axial) >= 1;
+}
+
 float hexTileGet(AxialHex axial) {
 	GAME_ASSERT(hexTileInRange(axial));
 	return hexTiles.hex[(int) axial.q][(int) axial.r];
 }
+
 
 void hexTileSet(AxialHex axial, float value) {
 	GAME_ASSERT(hexTileInRange(axial));
@@ -62,7 +68,7 @@ RenderTexture2D gameRenderTexture = {0};
 Rectangle gameRenderTextureSize = {.x=0, .y=0,.width= 1000, .height=1000};
 Rectangle gameDestinationScreenSize = {0, 0, 720, 720};
 
-bool debugTiles = false;
+bool debugTiles = true;
 
 AxialHex newTile = {0};
 float deltaSinceNewTile = 0;
@@ -89,7 +95,7 @@ void spawnRandomHexTile() {
 
 		GAME_ASSERT(hexTileInRange(axial));
 	} while (
-		! hexTileUseable(axial)
+		(!hexTileUseable(axial)) | hexTileOccupied(axial)
 	);
 
 	hexTileSet(axial, 0x1);
@@ -99,6 +105,8 @@ void spawnRandomHexTile() {
 
 
 bool movedHexagonsRecently = false;
+
+float gameVolume = 1;
 
 // --- end of header implementation --- //
 
@@ -190,6 +198,15 @@ Sound popSound = {0};
 Sound shiftSound = {0};
 Sound bottlePopSound = {0};
 Music backgroundMusic = {0};
+
+void updateSoundVolumes() {
+	float factor = gameVolume;
+	SetSoundVolume(popSound, 0.2 * factor);
+	SetSoundVolume(shiftSound, 0.5 * factor);
+	SetSoundVolume(bottlePopSound, 0.3f * factor);
+	SetMusicVolume(backgroundMusic, 0.2 * factor);
+}
+
 void gamePreInit3() {
 	// load any resources that depend on raylib
 	loadGameRenderTexture();
@@ -202,23 +219,23 @@ void gamePreInit3() {
 	while (!IsAudioDeviceReady()) {}
 
 	popSound = LoadSound(ASSET_PATH "/pop5b.mp3");
-	SetSoundVolume(popSound, 0.2);
-
 	shiftSound = LoadSound(ASSET_PATH "/shifting3.mp3");
-	SetSoundVolume(shiftSound, 0.5);
-
 	bottlePopSound = LoadSound(ASSET_PATH "/freesound_community-plastic-bottle-pop-90006.mp3");
-	SetSoundVolume(bottlePopSound, 0.3f);
-
 	backgroundMusic = LoadMusicStream(ASSET_PATH "/amurich-amurich-substance-without-shape-353916.mp3");
-	SetMusicVolume(backgroundMusic, 0.2);
 	PlayMusicStream(backgroundMusic);
-
-
+	updateSoundVolumes();
 }
 
 float endFadeInAccum = 0;
 float frameAccum = 0;
+
+void drawBorderedRectangle(Rectangle rec) {
+	DrawRectangleRec(rectangleShrink(rec, 0), clrDarkGreen);
+	DrawRectangleRec(rectangleShrink(rec, 4), clrYellow);
+	DrawRectangleRec(rectangleShrink(rec, 8), clrDarkGreen);
+}
+
+
 
 void gameDraw() {
 	frameAccum += GetFrameTime();
@@ -264,17 +281,18 @@ void gameDraw() {
 		}
 		char buff[128] = {0};
 		sprintf(buff, "Score: 0x% 5.0X0", (int)score);
-		Rectangle scoreBgBox = {70, 825, 870, 140};
-		DrawRectangleRec(rectangleShrink(scoreBgBox, -4), clrDarkGreen);
-		DrawRectangleRec(scoreBgBox, clrYellow);
-		DrawRectangleRec(rectangleShrink(scoreBgBox, 4), clrDarkGreen);
+		Rectangle scoreBgBox = {70, 825, 900, 140};
+		drawBorderedRectangle(scoreBgBox);
+		// DrawRectangleRec(rectangleShrink(scoreBgBox, -4), clrDarkGreen);
+		// DrawRectangleRec(scoreBgBox, clrYellow);
+		// DrawRectangleRec(rectangleShrink(scoreBgBox, 4), clrDarkGreen);
 
 		DrawText(buff, 160, 850, 100, clrOrange);
 
 
 		if (gameEnded) {
 			endFadeInAccum += GetFrameTime();
-			float alpha = Lerp(0, 1, endFadeInAccum / 2);
+			float alpha = Lerp(0, 1, endFadeInAccum /10);
 			Rectangle rect = rectangleShrink((Rectangle) {0, 0, 1000, 1000}, 150);
 
 			DrawRectangleRec(rectangleShrink(rect, -4), ColorAlpha(clrDarkGreen, alpha));
@@ -301,6 +319,8 @@ void gameDraw() {
 			r4.y += 400;
 			drawTextCentred(rectangleCentre(r4), GetFontDefault(), "Go outside and feel\nthe wind in your hair.", 65, ColorAlpha(clrOrange, alpha));
 		}
+
+
 	}
 	EndTextureMode();
 

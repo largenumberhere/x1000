@@ -6,16 +6,27 @@
 #include "raylib.h"
 
 typedef enum {
-    CLICKABLE_DIR_NW,
-    CLICKABLE_DIR_E,
-    CLICKABLE_DIR_SW,
-    CLICKABLE_DIR_SE,
-    CLICKABLE_DIR_W,
-} ClickableDir;
+
+
+    CLICKABLE_DIR_NW =  1,
+    CLICKABLE_DIR_E =   1 << 1,
+    CLICKABLE_DIR_SW =  1 << 2,
+    CLICKABLE_DIR_SE =  1 << 3,
+    CLICKABLE_DIR_W =   1 << 4,
+    CLICKABLE_DIR_6 =   1 << 5,
+
+    CLICKABLE_MOVE_HEXAGONS = 1 << 6,
+    CLICKABLE_HOVER = 1 << 7,
+
+    CLICKABLE_VOL_FIST = 1 << 12,
+    CLICKABLE_VOL_PLUS = 1 << 13,
+    CLICKABLE_VOL_MINUS = 1 << 14,
+    CLICKABLE_VOL_LAST = 1 << 15,
+} ClickableKind;
 
 typedef struct {
     Rectangle position;
-    ClickableDir direction;
+    ClickableKind kind;
     float tickCooldownCurrent;
     float tickCooldownMax;
     bool hovered;
@@ -28,4 +39,5 @@ static int64_t clickableCount = 0;
 
 void initClickables();
 void drawClickables();
-void tickClickables();
+
+bool clickableKindHasFlag(ClickableKind clickable, ClickableKind kind);

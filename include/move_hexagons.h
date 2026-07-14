@@ -5,5 +5,5 @@
 
 extern bool tileRecentlyMerged;
 extern bool tileRecentlyCompacted;
-void moveHexagons(ClickableDir direction);
+void moveHexagons(ClickableKind direction);
 

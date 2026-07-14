@@ -112,6 +112,13 @@ AxialHex axialDirectNeighbour(AxialHex axial, HexDirection direction, int count)
     return axial;
 }
 
+AxialHex axialHexAdd(AxialHex one, AxialHex two) {
+    one.q += two.q;
+    one.r += two.r;
+
+    return  one;
+}
+
 
 HexDirection hexDirectionOposite(HexDirection hd) {
     int directionsCount = 6;
