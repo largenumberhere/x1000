@@ -51,11 +51,13 @@ void drawCardinalArrow(ClickableKind clickMoveDirection, Vector2 origin, float o
     } else if (clickableKindHasFlag(clickMoveDirection, CLICKABLE_DIR_E)) {
         angle += 90;
     } else if (clickableKindHasFlag(clickMoveDirection, CLICKABLE_DIR_SW)) {
-        angle += 45;
+        angle += 240;
     } else if (clickableKindHasFlag(clickMoveDirection, CLICKABLE_DIR_SE)) {
         angle += 135;
     } else if (clickableKindHasFlag(clickMoveDirection, CLICKABLE_DIR_W)) {
         angle += 270;
+    } else if (clickableKindHasFlag(clickMoveDirection, CLICKABLE_DIR_NE)) {
+        angle += 45    ;
     } else {
         GAME_ASSERT(false);
     }
@@ -76,39 +78,63 @@ void initClickables() {
         .hovered = false,
     };
 
-    GameClickable seArrow = defaultClickable;
-    seArrow.kind |= CLICKABLE_DIR_SE;
+    {
+        GameClickable seArrow = defaultClickable;
+        seArrow.kind |= CLICKABLE_DIR_SE;
+        clickables[clickableCount++] = seArrow;
+    }
+    {
+        GameClickable nwArrow = defaultClickable;
+        nwArrow.kind |= CLICKABLE_DIR_NW;
+        nwArrow.position = (Rectangle) {15, 250, 250, 90};
+        clickables[clickableCount++] = nwArrow;
+    }
+    {
+        GameClickable eArrow = defaultClickable;
+        eArrow.kind |= CLICKABLE_DIR_E;
+        eArrow.position = (Rectangle) {830, 420, 150, 90};
+        clickables[clickableCount++] = eArrow;
+    }
 
-    GameClickable nwArrow = defaultClickable;
-    nwArrow.kind |= CLICKABLE_DIR_NW;
-    nwArrow.position = (Rectangle) {15, 250, 250, 90};
-    GameClickable eArrow = defaultClickable;
-    eArrow.kind |= CLICKABLE_DIR_E;
-    eArrow.position = (Rectangle) {830, 420, 150, 90};
+    {
+        GameClickable wArrow = defaultClickable;
+        wArrow.kind |= CLICKABLE_DIR_W;
+        wArrow.position = (Rectangle) {20, 420, 150, 90};
+        clickables[clickableCount++] = wArrow;
+    }
 
-    GameClickable wArrow = defaultClickable;
-    wArrow.kind |= CLICKABLE_DIR_W;
-    wArrow.position = (Rectangle) {20, 420, 150, 90};
+    {
+        GameClickable arrow5 = defaultClickable;
+        arrow5.kind |= CLICKABLE_DIR_SW;
+        arrow5.position = (Rectangle) {20, 670, 150, 90};
+        clickables[clickableCount++] = arrow5;
+    }
 
-    GameClickable arrow5 = defaultClickable;
-    arrow5.kind |= CLICKABLE_DIR_SW;
-    arrow5.position = (Rectangle) {20, 670, 150, 90};
+    {
 
+        GameClickable arrow6 = defaultClickable;
+        arrow6.kind |= CLICKABLE_DIR_NE;
+        arrow6.position = (Rectangle) {800, 100, 150, 90};
+        clickables[clickableCount++] = arrow6;
 
+    }
 
+    {
+        GameClickable volPlus = defaultClickable;
+        volPlus.position.x = 50;
+        volPlus.kind ^= CLICKABLE_MOVE_HEXAGONS;
+        volPlus.kind |= CLICKABLE_VOL_PLUS;
+        clickables[clickableCount++] = volPlus;
+    }
 
-    clickables[clickableCount++] = seArrow;
-    clickables[clickableCount++] = nwArrow;
+    {
+        GameClickable volMinus = defaultClickable;
+        volMinus.position.x = 50;
+        volMinus.kind ^= CLICKABLE_MOVE_HEXAGONS;
+        volMinus.kind |= CLICKABLE_VOL_MINUS;
+        clickables[clickableCount++] = volMinus;
+    }
 
-    clickables[clickableCount++] = eArrow;
-    clickables[clickableCount++] = wArrow;
-    clickables[clickableCount++] = arrow5;
-
-    GameClickable volPlus = defaultClickable;
-    volPlus.position.x = 50;
-    volPlus.kind ^= CLICKABLE_MOVE_HEXAGONS;
-    volPlus.kind |= CLICKABLE_VOL_PLUS;
-    clickables[clickableCount++] = volPlus;
 
 }
 
@@ -168,6 +194,9 @@ void drawClickables() {
 
         else if (clickableKindHasFlag(clickablesKind, CLICKABLE_DIR_NW)) {
             drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "NW", size, color);
+            drawCardinalArrow(clickables[i].kind, pos, 160, 20);
+        } else if (clickableKindHasFlag(clickablesKind, CLICKABLE_DIR_NE)) {
+            drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "NE", size, color);
             drawCardinalArrow(clickables[i].kind, pos, 160, 20);
         } else if (clickableKindHasFlag(clickablesKind, CLICKABLE_VOL_PLUS)) {
             drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "Vol+", size, color);
