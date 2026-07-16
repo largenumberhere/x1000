@@ -1,10 +1,5 @@
 #pragma once
-
-#include "math.h"
 #include "raylib.h"
-#include "game_error.h"
-
-#include "stdlib.h"
 
 // https://www.redblobgames.com/grids/hexagons/
 
@@ -22,14 +17,6 @@ typedef struct {
     float s;
 }  CubeHex;
 
-
-
-extern AxialHex axialDirectionVectors[6];
-
-
-
-extern CubeHex cubeHexDiagonalDirectionalVectors[6];
-
 // the origin is facing down to south, each change moves counter-clockwise
 typedef enum {
     HEXN_SE = 0,
@@ -43,29 +30,25 @@ typedef enum {
 
 
 LibHexDirection hexDirCClockwise(LibHexDirection dir, int count);
-
 LibHexDirection hexdirClockwise(LibHexDirection dir, int count);
 
-
+extern AxialHex axialDirectionVectors[6];
 AxialHex cubeToAxial(CubeHex cubeHex);
-
-CubeHex axialToCube(AxialHex axialHex);
-
-
-Vector2 hexToVec2(AxialHex hex, float size);
-
-CubeHex cubeRound(CubeHex value);
-
-
 AxialHex vec2ToHex(Vector2 vec, float size);
+AxialHex axialDiagonalNeighbour(AxialHex axial, LibHexDirection direction, int count);
+AxialHex axialDirectNeighbour(AxialHex axial, LibHexDirection direction, int count);
+AxialHex axialHexAdd(AxialHex one, AxialHex two);
 
+extern CubeHex cubeDirectionVectors[6];
+extern CubeHex cubeHexDiagonalDirectionalVectors[6];
+CubeHex axialToCube(AxialHex axialHex);
+CubeHex cubeRound(CubeHex value);
+CubeHex cubeDirection(int direction);
+CubeHex cubeAdd(CubeHex cube1, CubeHex cubeOffset);
+CubeHex cubeNeighbour(CubeHex cube, int direction);
+CubeHex cubeScale(CubeHex cube, float multiple);
 
 float axialManhattanDistance(AxialHex axial1, AxialHex axial2);
 
+Vector2 hexToVec2(AxialHex hex, float size);
 
-AxialHex axialDiagonalNeighbour(AxialHex axial, LibHexDirection direction, int count);
-
-
-AxialHex axialDirectNeighbour(AxialHex axial, LibHexDirection direction, int count);
-
-AxialHex axialHexAdd(AxialHex one, AxialHex two);

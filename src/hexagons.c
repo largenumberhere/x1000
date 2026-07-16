@@ -1,4 +1,8 @@
 #include "hexagons.h"
+#include "game_error.h"
+#include <math.h>   // fabs
+#include  <stdlib.h>    // abs
+
 
 AxialHex axialDirectionVectors[6] = {
     // {+1, 0},    // E
@@ -149,4 +153,33 @@ LibHexDirection hexDirCClockwise(LibHexDirection dir, int count) {
 LibHexDirection hexdirClockwise(LibHexDirection dir, int count) {
     LibHexDirection dir2 = hexDirCClockwise(dir, -count);
     return dir2;
+}
+
+
+CubeHex cubeDirectionVectors[6] = {
+    (CubeHex){+1, 0, -1}, (CubeHex){+1, -1, 0}, (CubeHex){0, -1, +1},
+    (CubeHex){-1, 0, +1}, (CubeHex){-1, +1, 0}, (CubeHex){0, +1, -1},
+};
+
+CubeHex cubeDirection(int direction) {
+    GAME_ASSERT(direction >= 0);
+    GAME_ASSERT(direction <= 5);
+
+    return cubeDirectionVectors[direction];
+}
+
+
+CubeHex cubeAdd(CubeHex cube1, CubeHex cubeOffset) {
+    return (CubeHex) {cube1.q + cubeOffset.q,  cube1.r + cubeOffset.r, cube1.s + cubeOffset.s};
+}
+
+CubeHex cubeNeighbour(CubeHex cube, int direction) {
+    GAME_ASSERT(direction >= 0);
+    GAME_ASSERT(direction <= 5);
+
+    return cubeAdd(cube, cubeDirection(direction));
+}
+
+CubeHex cubeScale(CubeHex cube, float multiple) {
+    return (CubeHex) {cube.q * multiple, cube.r * multiple, cube.s * multiple};
 }

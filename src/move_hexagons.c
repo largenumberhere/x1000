@@ -7,7 +7,7 @@
 #include "move_hexagons.h"
 
 #include "stdio.h"
-
+#include "stdlib.h"
 
 bool tileRecentlyMerged = false;
 bool tileRecentlyCompacted = false;
@@ -86,8 +86,8 @@ void visitPairCart(AxialHex pos1Cart, AxialHex pos2Cart, int mode) {
 	}
 }
 
-
-
+//
+//
 void walkLine(AxialHex pos, LibHexDirection iterDirection) {
 	AxialHex posCopy = pos;
 
@@ -101,12 +101,11 @@ void walkLine(AxialHex pos, LibHexDirection iterDirection) {
 		}
 	}
 
-
 	for (int i = 0; i < 6; i++) {
 		pos = posCopy;
 		AxialHex nextPos = axialDirectNeighbour(pos, iterDirection, 1);
 		while (cartesianInBounds(pos) && cartesianInBounds(nextPos)) {
-			visitPairCart(pos, nextPos,2);
+			visitPairCart(pos, nextPos,0);
 
 			pos = nextPos;
 			nextPos = axialDirectNeighbour(nextPos, iterDirection, 1) ;
@@ -114,109 +113,301 @@ void walkLine(AxialHex pos, LibHexDirection iterDirection) {
 	}
 
 }
+//
+// void walkFromEdge(AxialHex pos, LibHexDirection edgeWalkDirection, LibHexDirection innerDirection) {
+// 	if (innerDirection == HEXN_E) {
+// 		printf("east\n");
+// 	}
+//
+// 	while (cartesianInBounds(pos)) {
+// 		walkLine(pos, innerDirection);
+//
+// 		pos = axialDirectNeighbour(pos, edgeWalkDirection, 1);
+// 	}
+// }
 
-void walkFromEdge(AxialHex pos, LibHexDirection edgeWalkDirection, LibHexDirection innerDirection) {
-	if (innerDirection == HEXN_E) {
-		printf("east\n");
+/*
+ *
+* function cube_scale(hex, factor):
+	return Cube(hex.q * factor, hex.r * factor, hex.s * factor)
+
+function cube_ring(center, radius):
+	var results = []
+	// this code doesn't work for radius == 0; can you see why?
+	var hex = cube_add(center,
+						cube_scale(cube_direction(4), radius))
+	for each 0 ≤ i < 6:
+		for each 0 ≤ j < radius:
+			results.append(hex)
+			hex = cube_neighbor(hex, i)
+	return results
+ *
+ */
+
+int directionEdgeOne(LibHexDirection dir) {
+	return (int) dir;
+}
+
+int directionEdgeTwo(LibHexDirection dir) {
+	return (int) (dir + 1) % 6;
+}
+
+CubeHex findEdgeEndCubeCart(int i) {
+	GAME_ASSERT(i >= 0);
+	GAME_ASSERT(i < 6);
+
+	int radius = 3;
+	AxialHex centreAxialCart = {0,0};
+	CubeHex centreCubeCart = axialToCube(centreAxialCart);
+
+	// start in far SW corner
+	CubeHex cube = cubeAdd(centreCubeCart, cubeScale(cubeDirection(4), radius));
+	const int edgesCount = 6;
+	for (int edge = 0; edge < edgesCount; edge++) {
+
+		// advances at every corner
+		for (int j = 0; j < radius; j++) {
+			// position = cube
+
+			// next neighbour
+			cube = cubeNeighbour(cube, edge);
+			if (j == radius-1 && edge == i) {
+				return cube;
+			}
+		}
 	}
 
-	while (cartesianInBounds(pos)) {
-		walkLine(pos, innerDirection);
+	return (CubeHex) {0, 0, 0};
+}
 
-		pos = axialDirectNeighbour(pos, edgeWalkDirection, 1);
+CubeHex findEdgeDirectionOffsetCubeCart(int i) {
+	GAME_ASSERT(i >= 0);
+	GAME_ASSERT(i < 6);
+
+	int radius = 3;
+	AxialHex centreAxialCart = {0,0};
+	CubeHex centreCubeCart = axialToCube(centreAxialCart);
+
+	// start in far SW corner
+	CubeHex cube = cubeAdd(centreCubeCart, cubeScale(cubeDirection(4), radius));
+	const int edgesCount = 6;
+	for (int edge = 0; edge < edgesCount; edge++) {
+
+		// advances at every corner
+		for (int j = 0; j < radius; j++) {
+			// position = cube
+			if (j == 0 && edge == i) {
+				CubeHex nextPos = cubeNeighbour(cube, edge);
+				CubeHex diff = cubeAdd((CubeHex){-nextPos.q, -nextPos.r, -nextPos.s}, cube);
+				CubeHex opposite = (CubeHex){-diff.q, -diff.r, -diff.s};
+				CubeHex rounded = cubeRound(opposite);
+				return  rounded;
+			}
+			// next neighbour
+			cube = cubeNeighbour(cube, edge);
+		}
 	}
+
+	return (CubeHex) {0, 0, 0};
+}
+CubeHex findEdgeStartCubeCart(int i) {
+	GAME_ASSERT(i >= 0);
+	GAME_ASSERT(i < 6);
+
+	int radius = 3;
+	AxialHex centreAxialCart = {0,0};
+	CubeHex centreCubeCart = axialToCube(centreAxialCart);
+
+	// start in far SW corner
+	CubeHex cube = cubeAdd(centreCubeCart, cubeScale(cubeDirection(4), radius));
+	const int edgesCount = 6;
+	for (int edge = 0; edge < edgesCount; edge++) {
+
+		// advances at every corner
+		for (int j = 0; j < radius; j++) {
+			// position = cube
+			if (j == 0 && edge == i) {
+				return cube;
+			}
+			// next neighbour
+			cube = cubeNeighbour(cube, edge);
+		}
+	}
+
+	return (CubeHex) {0, 0, 0};
 }
 
 
-LibHexDirection lhsEdgeWalkDir(LibHexDirection dir) {
-	LibHexDirection dir2 = {0};
-	switch (dir) {
-		case HEXN_SE:
-			dir2 = HEXN_NE;
-			break;
-		case HEXN_E:
-			dir2 = HEXN_NW;
-			break;
-		case HEXN_NE:
-			dir2 = HEXN_W;
-			break;
-		case HEXN_NW:
-			dir2 = HEXN_SW;
-			break;
-		case HEXN_W:
-			dir2 = HEXN_SE;
-			break;
-		case HEXN_SW:
-			dir2 = HEXN_E;
-			break;
-		default:
-			GAME_ASSERT(false);
-	}
-
-	return dir2;
-}
-LibHexDirection rhsEdgeWalkDir(LibHexDirection dir) {
-	// note: left and rights may be mixed up.
-
-	LibHexDirection dir2 = {0};
-	switch (dir) {
-		case HEXN_SE:
-			dir2 = HEXN_W;
-			break;
-		case HEXN_E:
-			dir2 = HEXN_SW;
-			break;
-		case HEXN_NE:
-			dir2 = HEXN_SE;
-			break;
-		case HEXN_NW:
-			dir2 = HEXN_NE;
-			break;
-		case HEXN_W:
-			dir2 = HEXN_NE;
-			break;
-		case HEXN_SW:
-			dir2 = HEXN_NW;
-			break;
-		default:
-			GAME_ASSERT(false);
-	}
-
-	return dir2;
-}
-
-void move2(ClickableKind clickableKind) {
-	LibHexDirection dir =  clickableToHexDir(clickableKind);
-	if (dir == HEXN_E) {
-		printf("east2!\n");
-	}
-
-	LibHexDirection left = hexDirCClockwise(dir, 1);
-	LibHexDirection right = hexdirClockwise(dir, 1);
-
-	AxialHex pos = {0, 0};
-	AxialHex leftCorner = axialDirectNeighbour(pos, left, 2);
-	AxialHex middleCorner = axialDirectNeighbour(pos, dir ,2);
-	AxialHex rightCorner = axialDirectNeighbour(pos, right, 2);
-
-
-	// LibHexDirection leftEdgeDirection = hexDirCClockwise(left, 2);
-	// LibHexDirection rightEdgeDirection = hexdirClockwise(right, 2);
-
-
-	LibHexDirection leftEdgeDirection = lhsEdgeWalkDir(dir);
-	LibHexDirection rightEdgeDirection = rhsEdgeWalkDir(dir);
-
-	LibHexDirection innerDir = dir;
-
-
-	walkFromEdge(leftCorner, leftEdgeDirection, innerDir);
-	walkFromEdge(rightCorner, rightEdgeDirection, innerDir);
-
-
-	movedHexagonsRecently = true;
-	tileRecentlyCompacted = false;
-}
+// void walkEdgePair(int n) {
+// 	printf("pair start\n");
+// 	int radius = 3;
+// 	AxialHex centreAxialCart = {0,0};
+// 	CubeHex centreCubeCart = axialToCube(centreAxialCart);
+//
+// 	// start in far SW corner
+// 	CubeHex cube = cubeAdd(centreCubeCart, cubeScale(cubeDirection(4), radius));
+// 	const int edgesCount = 6;
+// 	for (int edge = 0; edge < edgesCount; edge++) {
+// 		// advances at every corner
+// 		for (int j = 0; j < radius; j++) {
+//
+// 			bool isAtEdge1 = edge == n;
+// 			bool isAtEdge2 = edge == n + 1;
+//
+// 			// position = cube
+// 			if (isAtEdge1 || isAtEdge2) {
+// 				printf("(%.0f, %.0f, %.0f)\n", cube.q, cube.r, cube.s);
+// 			}
+//
+// 			// next neighbour
+// 			cube = cubeNeighbour(cube, edge);
+// 			if (j == radius-1 && isAtEdge2) {
+// 				// include trailing coner too
+// 				printf("(%.0f, %.0f, %.0f)\n", cube.q, cube.r, cube.s);
+// 			}
+// 		}
+//
+// 	}
+// }
+//
+// void iterRing() {
+// 	int radius = 3;
+// 	AxialHex centreAxialCart = {0,0};
+// 	CubeHex centreCubeCart = axialToCube(centreAxialCart);
+//
+// 	// start in far SW corner
+// 	CubeHex cube = cubeAdd(centreCubeCart, cubeScale(cubeDirection(4), radius));
+// 	const int edgesCount = 6;
+// 	for (int edge = 0; edge < edgesCount; edge++) {
+//
+// 		// advances at every corner
+// 		for (int j = 0; j < radius; j++) {
+// 			// position = cube
+// 			printf("(%.0f, %.0f, %.0f)\n", cube.q, cube.r, cube.s);
+//
+// 			// next neighbour
+// 			cube = cubeNeighbour(cube, edge);
+//
+// 			if (j == radius-1) {
+// 				// include trailing coner too
+// 				printf("(%.0f, %.0f, %.0f)\n", cube.q, cube.r, cube.s);
+// 			}
+// 		}
+//
+// 		// backtrack one
+// 		// cube = cubeNeighbour(cube, edgesCount - edge);
+// 	}
+// }
+//
+// LibHexDirection lhsEdgeWalkDir(LibHexDirection dir) {
+// 	LibHexDirection dir2 = {0};
+// 	switch (dir) {
+// 		case HEXN_SE:
+// 			dir2 = HEXN_NE;
+// 			break;
+// 		case HEXN_E:
+// 			dir2 = HEXN_NW;
+// 			break;
+// 		case HEXN_NE:
+// 			dir2 = HEXN_W;
+// 			break;
+// 		case HEXN_NW:
+// 			dir2 = HEXN_SW;
+// 			break;
+// 		case HEXN_W:
+// 			dir2 = HEXN_SE;
+// 			break;
+// 		case HEXN_SW:
+// 			dir2 = HEXN_E;
+// 			break;
+// 		default:
+// 			GAME_ASSERT(false);
+// 	}
+//
+// 	return dir2;
+// }
+// LibHexDirection rhsEdgeWalkDir(LibHexDirection dir) {
+// 	// note: left and rights may be mixed up.
+//
+// 	LibHexDirection dir2 = {0};
+// 	switch (dir) {
+// 		case HEXN_SE:
+// 			dir2 = HEXN_W;
+// 			break;
+// 		case HEXN_E:
+// 			dir2 = HEXN_SW;
+// 			break;
+// 		case HEXN_NE:
+// 			dir2 = HEXN_SE;
+// 			break;
+// 		case HEXN_NW:
+// 			dir2 = HEXN_NE;
+// 			break;
+// 		case HEXN_W:
+// 			dir2 = HEXN_NE;
+// 			break;
+// 		case HEXN_SW:
+// 			dir2 = HEXN_NW;
+// 			break;
+// 		default:
+// 			GAME_ASSERT(false);
+// 	}
+//
+// 	return dir2;
+// }
+//
+// void move2(ClickableKind clickableKind) {
+// 	// iterRing();
+// 	for (int i = 0; i < 6; i++) {
+// 		CubeHex cubeCart = findEdgeStartCubeCart(i);
+// 		printf("%.0f %.0f %.0f\n", cubeCart.q, cubeCart.r, cubeCart.s);
+// 		// walkEdgePair(i);
+// 	}
+//
+// 	printf("\n\n");
+// 	for (int i = 0; i < 6; i++) {
+// 		CubeHex cubeCart = findEdgeDirectionOffsetCubeCart(i);
+// 		printf("%.0f %.0f %.0f\n", cubeCart.q, cubeCart.r, cubeCart.s);
+// 	}
+//
+// 	printf("\n\n");
+// 	for (int i = 0; i < 6; i++) {
+// 		CubeHex cubeCart = findEdgeEndCubeCart(i);
+// 		printf("%.0f %.0f %.0f\n", cubeCart.q, cubeCart.r, cubeCart.s);
+// 	}
+//
+//
+// 	LibHexDirection dir =  clickableToHexDir(clickableKind);
+// 	if (dir == HEXN_E) {
+// 		printf("east2!\n");
+// 	}
+//
+// 	LibHexDirection left = hexDirCClockwise(dir, 1);
+// 	LibHexDirection right = hexdirClockwise(dir, 1);
+//
+// 	AxialHex pos = {0, 0};
+// 	AxialHex leftCorner = axialDirectNeighbour(pos, left, 2);
+// 	AxialHex middleCorner = axialDirectNeighbour(pos, dir ,2);
+// 	AxialHex rightCorner = axialDirectNeighbour(pos, right, 2);
+//
+//
+// 	// LibHexDirection leftEdgeDirection = hexDirCClockwise(left, 2);
+// 	// LibHexDirection rightEdgeDirection = hexdirClockwise(right, 2);
+//
+//
+// 	LibHexDirection leftEdgeDirection = lhsEdgeWalkDir(dir);
+// 	LibHexDirection rightEdgeDirection = rhsEdgeWalkDir(dir);
+//
+// 	LibHexDirection innerDir = dir;
+//
+//
+// 	walkFromEdge(leftCorner, leftEdgeDirection, innerDir);
+// 	walkFromEdge(rightCorner, rightEdgeDirection, innerDir);
+//
+//
+// 	movedHexagonsRecently = true;
+// 	tileRecentlyCompacted = false;
+// }
 
 
 //
@@ -250,11 +441,69 @@ void move2(ClickableKind clickableKind) {
 // 	return compaction;
 // }
 
-void moveHexagons(ClickableKind direction) {
-	move2(direction);
+bool cubeEql(CubeHex one, CubeHex two) {
+	return (one.q == two.q && one.r == two.r && one.s == two.s);
+}
 
-	spawnRandomHexTile();
-	return;
+CubeHex cubeRotateCartCCOne(CubeHex cube) {
+	/*
+	https://www.redblobgames.com/grids/hexagons/#rings
+	A rotation 60° left (counter-clockwise ↺) shoves each coordinate one slot to the right →:
+				 [ q,  r,  s]
+		 to  [-s, -q, -r]
+	  to [r,  s,  q]
+	*/
+	CubeHex cube2 = {- cube.s, - cube.q, - cube.r};
+	return cube2;
+}
+
+
+
+void moveHexagons(ClickableKind clickableKind) {
+		LibHexDirection dir = clickableToHexDir(clickableKind);
+
+		// move2(direction);
+		int one = directionEdgeOne(dir);
+		int two = directionEdgeTwo(dir);
+		CubeHex startOneCubeCart = findEdgeStartCubeCart(one);
+		CubeHex startTwoCubeCart = findEdgeEndCubeCart(two);
+
+		CubeHex endOneCubeCart = findEdgeEndCubeCart(one);
+		CubeHex endTwoCubeCart = findEdgeEndCubeCart(two);
+
+		CubeHex dirOneCubeCart = findEdgeDirectionOffsetCubeCart(one);
+		CubeHex dirTwoCubeCart = findEdgeDirectionOffsetCubeCart(two);
+
+
+		CubeHex innerDir = cubeRotateCartCCOne(dirTwoCubeCart);
+
+		{
+			CubeHex edge1 = startOneCubeCart;
+			do {
+				LibHexDirection dir = /* cubeVectorToDir(innerDir);*/ -1; exit(0);
+
+				walkLine(cubeToAxial(edge1), dir);
+
+
+
+
+				edge1 = cubeAdd(edge1, dirOneCubeCart);
+			} while (!cubeEql(edge1, endOneCubeCart));
+		};
+
+
+		{
+			CubeHex edge2 = startOneCubeCart;
+			do {
+
+
+				edge2 = cubeAdd(edge2, dirOneCubeCart);
+			} while (!cubeEql(edge2, endOneCubeCart));
+		};
+
+		// spawnRandomHexTile();
+		return;
+}
 
 	//
 	// tileRecentlyMerged = false;
@@ -603,4 +852,4 @@ void moveHexagons(ClickableKind direction) {
 	// 	tileRecentlyCompacted = true;
 	// }
 
-}
+// }
