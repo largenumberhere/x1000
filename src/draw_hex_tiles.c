@@ -19,29 +19,6 @@ void fmtHex(char* medBuffer, float value) {
 	sprintf(medBuffer+1, "%02x", rhs);
 }
 
-
-
-// note: vertical and horizontal heights differ
-// // flat-topped hexagon
-// Vector2 hexCentreToStartPty(Vector2 pos, float size) {
-// 	pos.x -= size;
-// 	pos.y -= size;
-//
-// 	return  pos;
-// }
-//
-// // pointy-topped hexagon
-// Vector2 hexCentreToStartFlt(Vector2 pos, float size) {
-// 	float width = sqrtf(3) * size;
-// 	float half = width /2;
-//
-// 	pos.x -= half;
-// 	pos.y -= half;
-//
-// 	return  pos;
-// }
-
-
 void drawHexTiles() {
 
 	AxialHex centreHexAxial = {2, 2};
@@ -49,7 +26,6 @@ void drawHexTiles() {
 	Vector2 tilesOffset = {120 + hexHorizDiff(tileSize) / 2, 250 + hexVerticalDiff(tileSize) / 2};
 
 	Font font = GetFontDefault();
-	// LoadFont()
 
 	// draw bg hexagon
 	{;
@@ -76,15 +52,6 @@ void drawHexTiles() {
 			if (!isUnusedTile) {
 				drawHexagon(px, tileSize, clrLightGreen, BLACK);
 			}
-				// } else {
-			// if (debugTiles) {
-			//
-			// 	char buff[128] = {0};
-			// 	sprintf(buff, "%.0f,%.0f", hexUnit.q, hexUnit.r);
-			// 	DrawText(buff, px.x, px.y, 40, WHITE);
-			// 	// drawHexagon(px, tileSize, ORANGE, BLACK);
-			// }
-			// }
 		}
 	}
 
@@ -244,13 +211,9 @@ void drawHexTiles() {
 
 					sprintf(buff, "%.0f,%.0f", hexUnit.q, hexUnit.r);
 					DrawText(buff, px.x, px.y, 40, WHITE);
-					// drawHexagon(px, tileSize, ORANGE, BLACK);
 				}
 			}
 		}
 	}
-
-
-	// drawHexagon(hexToVec2((AxialHex){1,1}, tileSize), tileSize, clrYellow, clrYellow);
 
 }

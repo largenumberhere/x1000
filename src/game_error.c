@@ -7,6 +7,8 @@
 #include "stdlib.h"
 
 void assertFail(const char* file, int line) {
+    return; // no assertions for this build
+
     gameErrored = true;
     sprintf(gameErrorBuff, "Assertion failed. Version '%s'. At %s:%i\n", gameVersion, file, line);
 
@@ -14,7 +16,8 @@ void assertFail(const char* file, int line) {
     fprintf(stdout ,"%s", gameErrorBuff);
     fflush(stdout);
 
-#ifndef BUILD_WEB
+#ifndef PLATFORM_WEB
+
     asm("int3");
 #endif
 

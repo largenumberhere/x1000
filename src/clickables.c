@@ -237,9 +237,6 @@ void tickClickables () {
 
 
     for (int i = 0; i < clickableCount; i++) {
-        // bool isDirectionButton = clickables[i].kind >= CLICKABLE_DIR_FIRST && clickables[i].kind <= CLICKABLE_DIR_LAST;
-        // bool isVolumeButton = clickables[i].kind >= CLICKABLE_VOL_FIST && clickables[i].kind <= CLICKABLE_VOL_LAST;
-
         bool hoverEffect = clickableKindHasFlag(clickables[i].kind, CLICKABLE_HOVER);
         bool bMoveHexagons = clickableKindHasFlag(clickables[i].kind, CLICKABLE_MOVE_HEXAGONS);
 

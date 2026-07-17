@@ -133,17 +133,6 @@ bool checkGameOver() {
 }
 
 
-
-
-typedef struct {
-	bool tickSpawnRandomHexTile;
-
-} GameState;
-
-
-
-GameState gameState = {0};
-
 void initHexTiles() {
 	for (int q = 0; q < MAX_Q; q++) {
 		for (int r = 0; r < MAX_R; r++) {
@@ -288,10 +277,6 @@ void gameDraw() {
 		sprintf(buff, "Score: 0x% 5.0X0", (int)score);
 		Rectangle scoreBgBox = {70, 825, 900, 140};
 		drawBorderedRectangle(scoreBgBox);
-		// DrawRectangleRec(rectangleShrink(scoreBgBox, -4), clrDarkGreen);
-		// DrawRectangleRec(scoreBgBox, clrYellow);
-		// DrawRectangleRec(rectangleShrink(scoreBgBox, 4), clrDarkGreen);
-
 		DrawText(buff, 160, 850, 100, clrOrange);
 
 		// draw title
@@ -347,15 +332,7 @@ void gameDraw() {
 
 
 void tickControls() {
-	/*
-	 *
-	* we (NW NE)
-		ad (W E)
-		yx (SW SE)
-	 *
-	 */
-	// moveHexagons(clickables[i].direction);
-
+	// maybe handle keyboard controls?
 }
 
 void tickAudio() {
@@ -389,9 +366,7 @@ void gameTick() {
 	tickAudio();
 	gameEnded = checkGameOver();
 
-
 }
-
 
 
 void gameUpdate() {
