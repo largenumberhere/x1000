@@ -191,6 +191,11 @@ void gamePreInit1() {
 void gamePreInit2() {
 	// boot up raylib
 	InitWindow(gameDestinationScreenSize.width, gameDestinationScreenSize.height, "game");
+
+	// workaround for noise stuttering on mobile
+	// https://github.com/raysan5/raylib/issues/4491
+	SetAudioStreamBufferSizeDefault(4096 * 16);
+
 }
 
 
@@ -327,6 +332,10 @@ void gameDraw() {
 
 	BeginDrawing();
 	{
+		// workaround for flickering on mobile
+		// https://www.reddit.com/r/raylib/comments/wcvsiw/why_the_screen_flicker_if_clearbackground_isnt/
+		ClearBackground(WHITE);
+
 		drawGameRenderTexture();
 	}
 	EndDrawing();
