@@ -106,7 +106,7 @@ void spawnRandomHexTile() {
 
 bool movedHexagonsRecently = false;
 
-float gameVolume = 1;
+float gameVolumeAdjustment = 1;
 
 // --- end of header implementation --- //
 
@@ -205,7 +205,7 @@ Sound bottlePopSound = {0};
 Music backgroundMusic = {0};
 
 void updateSoundVolumes() {
-	float factor = gameVolume;
+	float factor =  gameVolumeAdjustment;
 	SetSoundVolume(popSound, 0.2 * factor);
 	SetSoundVolume(shiftSound, 0.5 * factor);
 	SetSoundVolume(bottlePopSound, 0.3f * factor);
@@ -293,6 +293,10 @@ void gameDraw() {
 		// DrawRectangleRec(rectangleShrink(scoreBgBox, 4), clrDarkGreen);
 
 		DrawText(buff, 160, 850, 100, clrOrange);
+
+		// draw title
+		drawBorderedRectangle((Rectangle){300, 40, 390, 140});
+		drawTextCentred((Vector2){500, 110}, GetFontDefault(), "x1000", 80, clrOrange);
 
 
 		if (gameEnded) {

@@ -12,6 +12,7 @@
 bool tileRecentlyMerged = false;
 bool tileRecentlyCompacted = false;
 
+float radius = 3;
 
 // Cartesian here is somewhat of a misnomer. It just means that the origin is 0,0 and negative numbers are allowed.
 // Array coordinates always start at zero and do not reflect the way the grid is displayed.
@@ -41,13 +42,20 @@ AxialHex axialCartesianToArray(AxialHex axial) {
 
 	GAME_ASSERT(axial2.q >= 0);
 	GAME_ASSERT(axial2.r >= 0);
-	GAME_ASSERT(axial2.q <= 4);
-	GAME_ASSERT(axial2.r <= 4);
+	GAME_ASSERT(axial2.q <= MAX_Q);
+	GAME_ASSERT(axial2.r <= MAX_R);
 	return axial2;
 }
 
 
 bool cartesianInBounds(AxialHex axial) {
+	return (
+			(axial.q >= -2) &&
+			(axial.r >= -2) &&
+			(axial.q <= 2)  &&
+			(axial.r <= 2)
+		);
+
 	return axialManhattanDistance((AxialHex){0,0}, axial) <= 2;
 }
 
@@ -74,6 +82,7 @@ void visitPairCart(AxialHex pos1Cart, AxialHex pos2Cart, int mode) {
 		if (tilesEqual && oneOccupied) {
 			hexTileSet(pos1, TILE_EMPTY);
 			hexTileSet(pos2, one * 2);
+			tileRecentlyMerged = true;
 		}
 	} else {
 		// compact
@@ -82,6 +91,7 @@ void visitPairCart(AxialHex pos1Cart, AxialHex pos2Cart, int mode) {
 		if (oneOccupied && two == TILE_EMPTY) {
 			hexTileSet(pos1, TILE_EMPTY);
 			hexTileSet(pos2, one);
+			tileRecentlyCompacted = true;
 		}
 	}
 }
@@ -161,17 +171,17 @@ CubeHex findEdgeEndCubeCart(int i) {
 	CubeHex centreCubeCart = axialToCube(centreAxialCart);
 
 	// start in far SW corner
-	CubeHex cube = cubeAdd(centreCubeCart, cubeScale(cubeDirection(4), radius));
+	CubeHex cube = cubeAdd(centreCubeCart, cubeScale(cubeDirection(4), radius-1));
 	const int edgesCount = 6;
 	for (int edge = 0; edge < edgesCount; edge++) {
 
 		// advances at every corner
-		for (int j = 0; j < radius; j++) {
+		for (int j = 0; j < radius-1; j++) {
 			// position = cube
 
 			// next neighbour
 			cube = cubeNeighbour(cube, edge);
-			if (j == radius-1 && edge == i) {
+			if (j == radius-2 && edge == i) {
 				return cube;
 			}
 		}
@@ -189,12 +199,12 @@ CubeHex findEdgeDirectionOffsetCubeCart(int i) {
 	CubeHex centreCubeCart = axialToCube(centreAxialCart);
 
 	// start in far SW corner
-	CubeHex cube = cubeAdd(centreCubeCart, cubeScale(cubeDirection(4), radius));
+	CubeHex cube = cubeAdd(centreCubeCart, cubeScale(cubeDirection(4), radius-1));
 	const int edgesCount = 6;
 	for (int edge = 0; edge < edgesCount; edge++) {
 
 		// advances at every corner
-		for (int j = 0; j < radius; j++) {
+		for (int j = 0; j < radius-1; j++) {
 			// position = cube
 			if (j == 0 && edge == i) {
 				CubeHex nextPos = cubeNeighbour(cube, edge);
@@ -202,7 +212,7 @@ CubeHex findEdgeDirectionOffsetCubeCart(int i) {
 				CubeHex opposite = (CubeHex){-diff.q, -diff.r, -diff.s};
 				CubeHex rounded = cubeRound(opposite);
 				return  rounded;
-			}
+			}\
 			// next neighbour
 			cube = cubeNeighbour(cube, edge);
 		}
@@ -219,12 +229,12 @@ CubeHex findEdgeStartCubeCart(int i) {
 	CubeHex centreCubeCart = axialToCube(centreAxialCart);
 
 	// start in far SW corner
-	CubeHex cube = cubeAdd(centreCubeCart, cubeScale(cubeDirection(4), radius));
+	CubeHex cube = cubeAdd(centreCubeCart, cubeScale(cubeDirection(4), radius-1));
 	const int edgesCount = 6;
 	for (int edge = 0; edge < edgesCount; edge++) {
 
 		// advances at every corner
-		for (int j = 0; j < radius; j++) {
+		for (int j = 0; j < radius-1; j++) {
 			// position = cube
 			if (j == 0 && edge == i) {
 				return cube;
@@ -460,13 +470,15 @@ CubeHex cubeRotateCartCCOne(CubeHex cube) {
 
 
 void moveHexagons(ClickableKind clickableKind) {
-		LibHexDirection dir = clickableToHexDir(clickableKind);
+		LibHexDirection arrowDirection = clickableToHexDir(clickableKind);
+
+		LibHexDirection dir = (arrowDirection + 3) % 6;
 
 		// move2(direction);
 		int one = directionEdgeOne(dir);
 		int two = directionEdgeTwo(dir);
 		CubeHex startOneCubeCart = findEdgeStartCubeCart(one);
-		CubeHex startTwoCubeCart = findEdgeEndCubeCart(two);
+		CubeHex startTwoCubeCart = findEdgeStartCubeCart(two);
 
 		CubeHex endOneCubeCart = findEdgeEndCubeCart(one);
 		CubeHex endTwoCubeCart = findEdgeEndCubeCart(two);
@@ -477,15 +489,14 @@ void moveHexagons(ClickableKind clickableKind) {
 
 		CubeHex innerDir = cubeRotateCartCCOne(dirTwoCubeCart);
 
+		tileRecentlyCompacted = false;
+		tileRecentlyMerged = false;
+
 		{
 			CubeHex edge1 = startOneCubeCart;
 			do {
-				LibHexDirection dir = /* cubeVectorToDir(innerDir);*/ -1; exit(0);
-
-				walkLine(cubeToAxial(edge1), dir);
-
-
-
+				LibHexDirection dir2 = (dir + 3) % 6;
+				walkLine(cubeToAxial(edge1), dir2);
 
 				edge1 = cubeAdd(edge1, dirOneCubeCart);
 			} while (!cubeEql(edge1, endOneCubeCart));
@@ -493,16 +504,16 @@ void moveHexagons(ClickableKind clickableKind) {
 
 
 		{
-			CubeHex edge2 = startOneCubeCart;
-			do {
+				CubeHex edge1 = startTwoCubeCart;
+				do {
+					LibHexDirection dir2 = (dir + 3) % 6;
+					walkLine(cubeToAxial(edge1), dir2);
 
-
-				edge2 = cubeAdd(edge2, dirOneCubeCart);
-			} while (!cubeEql(edge2, endOneCubeCart));
+					edge1 = cubeAdd(edge1, dirTwoCubeCart);
+				} while (!cubeEql(edge1, endTwoCubeCart));
 		};
 
-		// spawnRandomHexTile();
-		return;
+		spawnRandomHexTile();
 }
 
 	//

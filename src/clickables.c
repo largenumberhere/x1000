@@ -41,8 +41,6 @@ bool clickableKindHasFlag(ClickableKind clickable, ClickableKind kind) {
     return  (clickable & kind) == kind;
 }
 
-
-
 void drawCardinalArrow(ClickableKind clickMoveDirection, Vector2 origin, float offsetX, float offsetY) {
     float angle = 180;	// the origin points down for the arrow's implementation;
 
@@ -72,7 +70,7 @@ void drawCardinalArrow(ClickableKind clickMoveDirection, Vector2 origin, float o
 void initClickables() {
     GameClickable defaultClickable = {
         .kind = CLICKABLE_HOVER | CLICKABLE_MOVE_HEXAGONS,
-        .position = {750, 600, 250, 90},
+        .position = {750, 610, 250, 90},
         .tickCooldownCurrent = 1000,
         .tickCooldownMax = 300,
         .hovered = false,
@@ -92,44 +90,50 @@ void initClickables() {
     {
         GameClickable eArrow = defaultClickable;
         eArrow.kind |= CLICKABLE_DIR_E;
-        eArrow.position = (Rectangle) {830, 420, 150, 90};
+        eArrow.position = (Rectangle) {830, 440, 150, 90};
         clickables[clickableCount++] = eArrow;
     }
 
     {
         GameClickable wArrow = defaultClickable;
         wArrow.kind |= CLICKABLE_DIR_W;
-        wArrow.position = (Rectangle) {20, 420, 150, 90};
+        wArrow.position = (Rectangle) {20, 440, 150, 90};
         clickables[clickableCount++] = wArrow;
     }
 
     {
         GameClickable arrow5 = defaultClickable;
         arrow5.kind |= CLICKABLE_DIR_SW;
-        arrow5.position = (Rectangle) {20, 670, 150, 90};
+        arrow5.position = (Rectangle) {15, 610, 250, 90};
         clickables[clickableCount++] = arrow5;
     }
 
     {
 
-        GameClickable arrow6 = defaultClickable;
-        arrow6.kind |= CLICKABLE_DIR_NE;
-        arrow6.position = (Rectangle) {800, 100, 150, 90};
-        clickables[clickableCount++] = arrow6;
+        GameClickable arrowNE = defaultClickable;
+        arrowNE.kind |= CLICKABLE_DIR_NE;
+        arrowNE.position = (Rectangle) {750, 250, 250, 90};
+        clickables[clickableCount++] = arrowNE;
 
     }
 
     {
         GameClickable volPlus = defaultClickable;
-        volPlus.position.x = 50;
+        volPlus.position.x = 730;
+        volPlus.position.y = 730;
         volPlus.kind ^= CLICKABLE_MOVE_HEXAGONS;
         volPlus.kind |= CLICKABLE_VOL_PLUS;
+        volPlus.position.height -= 20;
+        volPlus.position.width = 200;
         clickables[clickableCount++] = volPlus;
     }
 
     {
         GameClickable volMinus = defaultClickable;
         volMinus.position.x = 50;
+        volMinus.position.y = 730;
+        volMinus.position.height -= 20;
+        volMinus.position.width = 200;
         volMinus.kind ^= CLICKABLE_MOVE_HEXAGONS;
         volMinus.kind |= CLICKABLE_VOL_MINUS;
         clickables[clickableCount++] = volMinus;
@@ -184,7 +188,7 @@ void drawClickables() {
 
         else if (clickableKindHasFlag(clickablesKind, CLICKABLE_DIR_SW)) {
             drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "SW", size, color);
-            drawCardinalArrow(clickables[i].kind, pos, 80, 45);
+            drawCardinalArrow(clickables[i].kind, pos, 170, 60);
         }
 
         else if (clickableKindHasFlag(clickablesKind, CLICKABLE_DIR_W)) {
@@ -195,11 +199,14 @@ void drawClickables() {
         else if (clickableKindHasFlag(clickablesKind, CLICKABLE_DIR_NW)) {
             drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "NW", size, color);
             drawCardinalArrow(clickables[i].kind, pos, 160, 20);
+
         } else if (clickableKindHasFlag(clickablesKind, CLICKABLE_DIR_NE)) {
             drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "NE", size, color);
-            drawCardinalArrow(clickables[i].kind, pos, 160, 20);
+            drawCardinalArrow(clickables[i].kind, pos, 200, 20);
+
         } else if (clickableKindHasFlag(clickablesKind, CLICKABLE_VOL_PLUS)) {
             drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "Vol+", size, color);
+
         } else if (clickableKindHasFlag(clickablesKind, CLICKABLE_VOL_MINUS)) {
             drawTextCentred(rectangleCentre(textSubRec), GetFontDefault(), "Vol-", size, color);
         } else {
@@ -259,7 +266,16 @@ void tickClickables () {
             bool isMouseOver = CheckCollisionPointRec(mouse, clickables[i].position);
             if (isMouseOver && wasLeftclickPressed && clickables[i].tickCooldownCurrent) {
                 clickables[i].tickCooldownCurrent = 0;
-                gameVolume += 0.1f;
+                gameVolumeAdjustment += 0.2f;
+                updateSoundVolumes();
+            }
+        }
+
+        if (clickableKindHasFlag(clickables[i].kind, CLICKABLE_VOL_MINUS)) {
+            bool isMouseOver = CheckCollisionPointRec(mouse, clickables[i].position);
+            if (isMouseOver && wasLeftclickPressed && clickables[i].tickCooldownCurrent) {
+                clickables[i].tickCooldownCurrent = 0;
+                gameVolumeAdjustment -= 0.2f;
                 updateSoundVolumes();
             }
         }

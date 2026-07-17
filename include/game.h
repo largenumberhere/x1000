@@ -57,6 +57,6 @@ extern bool debugTiles;
 extern AxialHex newTile;
 extern float deltaSinceNewTile;
 extern bool movedHexagonsRecently;
-extern float gameVolume;
+extern float gameVolumeAdjustment;
 
 void updateSoundVolumes();
